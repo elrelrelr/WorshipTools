@@ -42,18 +42,48 @@
                     <i class="fa-solid fa-music text-blue-500 text-2xl"></i>
                     <span class="font-bold text-xl tracking-tight">Worship<span class="text-blue-500">Tools</span></span>
                 </div>
-                <div class="flex space-x-2 text-sm overflow-x-auto no-scrollbar">
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-2 text-sm">
                     <button onclick="scrollToSection('formato')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Etiquetado</button>
                     <button onclick="scrollToSection('diapositivas')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Editor</button>
                     <button onclick="scrollToSection('setlist-builder')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap text-orange-400">Repertorio (PPTX)</button>
                     <button onclick="scrollToSection('pdf-merger')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Unir PDFs</button>
                     <button onclick="toggleQuickCopy()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition flex items-center gap-2 whitespace-nowrap ml-2">
-                        <i class="fa-regular fa-clipboard"></i> <span class="hidden sm:inline">Copiado Rápido</span>
+                        <i class="fa-regular fa-clipboard"></i> <span>Copiado Rápido</span>
                     </button>
                     <button onclick="toggleTheme()" class="bg-indigo-500 hover:bg-indigo-600 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-3 py-2 rounded transition flex items-center gap-2 whitespace-nowrap ml-2" title="Cambiar Tema">
                         <i id="themeIcon" class="fa-solid fa-moon"></i>
                     </button>
                 </div>
+
+                <!-- Mobile Menu Button -->
+                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                    <i id="mobileMenuIcon" class="fa-solid fa-bars text-xl text-slate-700 dark:text-slate-200"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Dropdown -->
+            <div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
+                <button onclick="scrollToSection('formato'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-hashtag text-blue-500"></i> Etiquetado
+                </button>
+                <button onclick="scrollToSection('diapositivas'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-blue-500"></i> Editor
+                </button>
+                <button onclick="scrollToSection('setlist-builder'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-orange-500"></i> Repertorio (PPTX)
+                </button>
+                <button onclick="scrollToSection('pdf-merger'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus text-blue-500"></i> Unir PDFs
+                </button>
+                <hr class="border-slate-200 dark:border-slate-700">
+                <button onclick="toggleQuickCopy()" class="w-full text-left px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
+                    <i class="fa-regular fa-clipboard"></i> Copiado Rápido
+                </button>
+                <button onclick="toggleTheme()" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 dark:bg-slate-700 dark:hover:bg-slate-600 text-white transition flex items-center gap-2">
+                    <i id="themeIconMobile" class="fa-solid fa-moon"></i> Cambiar Tema
+                </button>
             </div>
         </div>
     </nav>
@@ -61,26 +91,26 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
 
         <!-- SECCIÓN 1: ETIQUETADO -->
-        <section id="formato" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
+        <section id="formato" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+            <h2 class="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
                 <i class="fa-solid fa-hashtag"></i> Generador de Etiquetas & Recursos
             </h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs text-slate-400 uppercase font-bold">Canción</label>
                             <input type="text" id="songName" placeholder="Ej: tu fidelidad" oninput="updateFilenamePreview()"
-                                class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-colors">
+                                class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-3 sm:p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-colors text-base">
                         </div>
                         <div>
                             <label class="text-xs text-slate-400 uppercase font-bold">Autor</label>
                             <input type="text" id="songAuthor" placeholder="Ej: marcos witt" oninput="updateFilenamePreview()"
-                                class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-colors">
+                                class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-3 sm:p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none transition-colors text-base">
                         </div>
                     </div>
-                    <button onclick="generateTag()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 rounded transition flex justify-center items-center gap-2">
+                    <button onclick="generateTag()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded transition flex justify-center items-center gap-2 text-base">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Generar Datos
                     </button>
                 </div>
@@ -90,45 +120,51 @@
                         <label class="text-xs text-slate-400 uppercase font-bold">Resultado (Etiqueta)</label>
                         <div class="flex gap-2">
                             <input type="text" id="resultOutput" readonly 
-                                class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded p-2.5 text-green-600 dark:text-green-400 font-mono focus:outline-none transition-colors">
-                            <button onclick="copyToClipboard('resultOutput')" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded transition" title="Copiar">
+                                class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded p-3 sm:p-2.5 text-green-600 dark:text-green-400 font-mono focus:outline-none transition-colors text-base">
+                            <button onclick="copyToClipboard('resultOutput')" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded transition min-h-[44px] min-w-[44px] flex items-center justify-center" title="Copiar">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
                     </div>
 
+                    <!-- Toggle Instrumentos -->
+                    <button onclick="toggleInstrumentos()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-sm py-3 rounded flex items-center justify-center gap-2 transition mb-2 min-h-[44px]">
+                        <i id="instrumentosIcon" class="fa-solid fa-chevron-down"></i>
+                        <span id="instrumentosText">Mostrar Instrumentos</span>
+                    </button>
+
                     <!-- Botones Instrumentos -->
-                    <div class="flex flex-wrap gap-2 text-xs">
-                        <button onclick="searchExternal('youtube')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-brands fa-youtube"></i> Video</button>
-                        <button onclick="searchExternal('lyrics')" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-align-left"></i> Letra</button>
-                        <button onclick="searchExternal('chords')" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-guitar"></i> Acordes</button>
+                    <div id="instrumentosContainer" class="hidden flex flex-wrap gap-2 text-sm instrumentos">
+                        <button onclick="searchExternal('youtube')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-brands fa-youtube"></i> Video</button>
+                        <button onclick="searchExternal('lyrics')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-align-left"></i> Letra</button>
+                        <button onclick="searchExternal('chords')" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-guitar"></i> Acordes</button>
                         
                         <!-- Instrumentos Base -->
-                        <button onclick="searchExternal('drums')" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-drum"></i> Batería</button>
-                        <button onclick="searchExternal('piano')" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-keyboard"></i> Piano</button>
-                        <button onclick="searchExternal('guitar_cover')" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-guitar"></i> Guitarra</button>
-                        <button onclick="searchExternal('bass')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-music"></i> Bajo</button>
+                        <button onclick="searchExternal('drums')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-drum"></i> Batería</button>
+                        <button onclick="searchExternal('piano')" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-keyboard"></i> Piano</button>
+                        <button onclick="searchExternal('guitar_cover')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-guitar"></i> Guitarra</button>
+                        <button onclick="searchExternal('bass')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-music"></i> Bajo</button>
                         
                         <!-- Nuevos Solicitados -->
-                        <button onclick="searchExternal('voices')" class="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-microphone-lines"></i> Voces</button>
-                        <button onclick="searchExternal('trumpet')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-bullhorn"></i> Trompeta</button>
-                        <button onclick="searchExternal('flute')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-wind"></i> Flauta</button>
-                        <button onclick="searchExternal('tiple')" class="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1.5 rounded flex gap-1 items-center"><i class="fa-solid fa-guitar"></i> Tiple</button>
+                        <button onclick="searchExternal('voices')" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-microphone-lines"></i> Voces</button>
+                        <button onclick="searchExternal('trumpet')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-bullhorn"></i> Trompeta</button>
+                        <button onclick="searchExternal('flute')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-wind"></i> Flauta</button>
+                        <button onclick="searchExternal('tiple')" class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-guitar"></i> Tiple</button>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- SECCIÓN 2: EDITOR -->
-        <section id="diapositivas" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-            <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-blue-400">
+        <section id="diapositivas" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+            <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-blue-400">
                 <i class="fa-solid fa-layer-group"></i> Editor de Diapositivas
             </h2>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                 
                 <!-- Panel Lateral (Configuración) -->
-                <div class="lg:col-span-4 space-y-6 bg-slate-50 dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 h-fit transition-colors">
+                <div class="lg:col-span-4 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 h-fit transition-colors">
                     
                     <!-- Letra -->
                     <div>
@@ -137,18 +173,18 @@
                             <span class="text-xs text-slate-500 cursor-pointer hover:text-red-400" onclick="clearSlides()">Limpiar Todo</span>
                         </div>
                         <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
-                            class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors"></textarea>
+                            class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors text-base"></textarea>
                         
                         <div class="flex gap-4 mt-2 mb-3">
-                             <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                             <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <input type="checkbox" id="addBlankSlide" checked class="accent-blue-500"> +Slide Vacío
                             </label>
-                            <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <input type="checkbox" id="addTitleSlide" checked class="accent-blue-500"> +Portada
                             </label>
                         </div>
 
-                        <button onclick="processLyrics()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold transition flex items-center justify-center gap-2">
+                        <button onclick="processLyrics()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-base min-h-[44px]">
                             <i class="fa-solid fa-arrows-rotate"></i> Procesar Diapositivas
                         </button>
                     </div>
@@ -161,7 +197,7 @@
                         <div>
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Tipografía</span>
                             <div class="flex gap-2 mb-2">
-                                <select id="fontFamily" onchange="updateStyles()" class="bg-slate-700 text-sm rounded p-2 flex-1 outline-none text-white border border-slate-600">
+                                <select id="fontFamily" onchange="updateStyles()" class="bg-slate-700 text-sm rounded p-2.5 flex-1 outline-none text-white border border-slate-600 text-base">
                                     <option value="Cambria" selected>Cambria (Default)</option>
                                     <option value="Arial">Arial</option>
                                     <option value="Times New Roman">Times New Roman</option>
@@ -169,10 +205,10 @@
                                     <option value="Impact">Impact</option>
                                 </select>
                                 <input type="number" id="fontSize" value="60" onchange="updateStyles()" title="Tamaño en PT"
-                                    class="bg-slate-700 text-sm rounded p-2 w-16 outline-none text-center text-white border border-slate-600 font-mono">
+                                    class="bg-slate-700 text-sm rounded p-2.5 w-16 outline-none text-center text-white border border-slate-600 font-mono text-base">
                             </div>
                             <!-- Control de Negrita Visible -->
-                            <label class="flex items-center gap-2 text-xs text-slate-800 dark:text-white cursor-pointer select-none bg-slate-200 dark:bg-slate-800 p-2 rounded border border-slate-300 dark:border-slate-600 transition-colors">
+                            <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-800 dark:text-white cursor-pointer select-none bg-slate-200 dark:bg-slate-800 p-2.5 rounded border border-slate-300 dark:border-slate-600 transition-colors min-h-[44px]">
                                 <input type="checkbox" id="textBold" checked onchange="updateStyles()" class="accent-blue-500"> 
                                 <span class="font-bold">Negrita (Bold)</span>
                             </label>
@@ -183,9 +219,9 @@
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Estilo y Color</span>
                             <div class="bg-slate-800 p-3 rounded border border-slate-600 space-y-2">
                                 <div class="flex items-center gap-3">
-                                    <input type="color" id="textColor" value="#000000" onchange="updateStyles()" class="h-8 w-8 bg-transparent border-0 cursor-pointer rounded overflow-hidden" title="Color de Texto">
+                                    <input type="color" id="textColor" value="#000000" onchange="updateStyles()" class="h-10 w-10 bg-transparent border-0 cursor-pointer rounded overflow-hidden" title="Color de Texto">
                                     <div class="h-6 w-px bg-slate-600"></div>
-                                    <label class="flex items-center gap-1 text-xs cursor-pointer select-none text-white">
+                                    <label class="flex items-center gap-1 text-xs sm:text-sm cursor-pointer select-none text-white">
                                         <input type="checkbox" id="textShadow" onchange="updateStyles()" class="accent-blue-500"> Sombra
                                     </label>
                                 </div>
@@ -196,17 +232,17 @@
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] text-slate-400 uppercase">H</span>
                                     <div class="flex gap-1">
-                                        <button onclick="setAlignment('left')" class="p-1.5 hover:bg-slate-700 rounded transition text-white" id="btnAlignLeft" title="Izquierda"><i class="fa-solid fa-align-left"></i></button>
-                                        <button onclick="setAlignment('center')" class="p-1.5 hover:bg-slate-700 rounded transition text-white bg-slate-700" id="btnAlignCenter" title="Centro"><i class="fa-solid fa-align-center"></i></button>
-                                        <button onclick="setAlignment('right')" class="p-1.5 hover:bg-slate-700 rounded transition text-white" id="btnAlignRight" title="Derecha"><i class="fa-solid fa-align-right"></i></button>
+                                        <button onclick="setAlignment('left')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnAlignLeft" title="Izquierda"><i class="fa-solid fa-align-left"></i></button>
+                                        <button onclick="setAlignment('center')" class="p-2 hover:bg-slate-700 rounded transition text-white bg-slate-700 min-h-[40px] min-w-[40px]" id="btnAlignCenter" title="Centro"><i class="fa-solid fa-align-center"></i></button>
+                                        <button onclick="setAlignment('right')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnAlignRight" title="Derecha"><i class="fa-solid fa-align-right"></i></button>
                                     </div>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] text-slate-400 uppercase">V</span>
                                     <div class="flex gap-1">
-                                        <button onclick="setVerticalAlignment('top')" class="p-1.5 hover:bg-slate-700 rounded transition text-white" id="btnVAlignTop" title="Arriba"><i class="fa-solid fa-arrow-up"></i></button>
-                                        <button onclick="setVerticalAlignment('center')" class="p-1.5 hover:bg-slate-700 rounded transition text-white bg-slate-700" id="btnVAlignCenter" title="Medio"><i class="fa-solid fa-arrows-up-down"></i></button>
-                                        <button onclick="setVerticalAlignment('bottom')" class="p-1.5 hover:bg-slate-700 rounded transition text-white" id="btnVAlignBottom" title="Abajo"><i class="fa-solid fa-arrow-down"></i></button>
+                                        <button onclick="setVerticalAlignment('top')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnVAlignTop" title="Arriba"><i class="fa-solid fa-arrow-up"></i></button>
+                                        <button onclick="setVerticalAlignment('center')" class="p-2 hover:bg-slate-700 rounded transition text-white bg-slate-700 min-h-[40px] min-w-[40px]" id="btnVAlignCenter" title="Medio"><i class="fa-solid fa-arrows-up-down"></i></button>
+                                        <button onclick="setVerticalAlignment('bottom')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnVAlignBottom" title="Abajo"><i class="fa-solid fa-arrow-down"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -217,13 +253,13 @@
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Imagen de Fondo</span>
                             <div class="flex gap-2">
                                 <input type="file" id="bgImageInput" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
-                                <button onclick="openGallery()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 py-2 rounded text-xs flex items-center justify-center gap-1 transition text-white font-semibold">
+                                <button onclick="openGallery()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 py-2.5 rounded text-xs sm:text-sm flex items-center justify-center gap-1 transition text-white font-semibold min-h-[44px]">
                                     <i class="fa-solid fa-images"></i> Galería
                                 </button>
-                                <button onclick="document.getElementById('bgImageInput').click()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-xs transition text-white border border-slate-600" title="Subir desde PC">
+                                <button onclick="document.getElementById('bgImageInput').click()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2.5 rounded text-xs sm:text-sm transition text-white border border-slate-600 min-h-[44px] min-w-[44px] flex items-center justify-center" title="Subir desde PC">
                                     <i class="fa-solid fa-upload"></i>
                                 </button>
-                                <button onclick="removeBackground()" class="bg-red-900/40 hover:bg-red-900/60 text-red-200 px-3 rounded text-xs transition border border-red-900/50">
+                                <button onclick="removeBackground()" class="bg-red-900/40 hover:bg-red-900/60 text-red-200 px-3 rounded text-xs sm:text-sm transition border border-red-900/50 min-h-[44px] min-w-[44px] flex items-center justify-center">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -244,20 +280,29 @@
                         <div>
                             <label class="text-xs text-slate-400 uppercase font-bold">Nombre del Archivo (Exportación)</label>
                             <input type="text" id="exportFileName" placeholder="Nombre del archivo..." 
-                                class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none font-mono mt-1 transition-colors">
+                                class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none font-mono mt-1 transition-colors text-base">
                         </div>
 
                         <!-- Botones -->
                         <div class="grid grid-cols-2 gap-2">
-                            <button onclick="addToRepertoire()" class="col-span-2 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded font-bold transition flex items-center justify-center gap-2 border border-amber-500">
+                            <button onclick="addToRepertoire()" class="col-span-2 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 border border-amber-500 text-base min-h-[44px]">
                                 <i class="fa-solid fa-plus-circle"></i> Agregar al Repertorio
                             </button>
-                            <button onclick="downloadPPTX()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm">
-                                <i class="fa-solid fa-file-powerpoint"></i> Descargar PPTX
+                            <button onclick="downloadPPTX()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
+                                <i class="fa-solid fa-file-powerpoint"></i> <span class="hidden sm:inline"></span>Descargar PPTX</span>
                             </button>
-                            <button id="btnExportPDF" onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm">
-                                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+                            <button id="btnExportPDF" onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
+                                <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Descargar PDF</span>
                             </button>
+                            <!-- Dentro de la sección del Editor, cerca de los botones de exportación -->
+<div class="grid grid-cols-2 gap-2 mt-2">
+    <button onclick="importSongFromFile()" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
+        <i class="fa-solid fa-file-import"></i> Importar .md
+    </button>
+    <button onclick="exportSongAsMarkdown()" class="bg-purple-800 hover:bg-purple-900 text-white py-2 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px]">
+        <i class="fa-solid fa-file-export"></i> Exportar .md
+    </button>
+</div>
                         </div>
                         <div id="loadingIndicator" class="hidden flex items-center justify-center gap-2 mt-2 text-sm text-blue-400">
                             <div class="loader"></div> <span id="loadingText">Procesando...</span>
@@ -267,11 +312,11 @@
 
                 <!-- Vista Previa (Centro) -->
                 <div class="lg:col-span-8">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 transition-colors">Vista Previa (<span id="slideCount">0</span>)</h3>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                        <h3 class="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 transition-colors">Vista Previa (<span id="slideCount">0</span>)</h3>
                         <div class="flex gap-2">
-                            <button onclick="toggleQuickCopy()" class="bg-slate-700 text-xs px-3 py-1 rounded hover:bg-blue-600 transition text-white border border-slate-600">
-                                <i class="fa-regular fa-clone"></i> Copiar Textos
+                            <button onclick="toggleQuickCopy()" class="bg-slate-700 text-xs sm:text-sm px-3 py-2 rounded hover:bg-blue-600 transition text-white border border-slate-600 min-h-[40px] min-w-[40px] sm:min-w-auto">
+                                <i class="fa-regular fa-clone"></i> <span class="hidden sm:inline">Copiar Textos</span>
                             </button>
                         </div>
                     </div>
@@ -288,14 +333,39 @@
         </section>
 
         <!-- SECCIÓN NUEVA: UNIR PPTX / REPERTORIO -->
-        <section id="setlist-builder" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-700 ring-1 ring-amber-500/30 transition-colors duration-300">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-amber-500 dark:text-amber-400">
-                <i class="fa-solid fa-list-check"></i> Constructor de Repertorio (Unir PPTX)
-            </h2>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section id="setlist-builder" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 ring-1 ring-amber-500/30 transition-colors duration-300">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+                <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-amber-500 dark:text-amber-400">
+                    <i class="fa-solid fa-list-check"></i> Constructor de Repertorio (Unir PPTX)
+                </h2>
+                <button onclick="toggleRepertorio()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
+                    <i id="repertorioIcon" class="fa-solid fa-chevron-down"></i>
+                    <span id="repertorioText">Mostrar</span>
+                </button>
+            </div>
+
+            <!-- Vista Previa Compacta -->
+            <div id="repertorioPreview" class="hidden bg-amber-50 dark:bg-slate-900/50 rounded-xl p-4 border border-amber-200 dark:border-amber-800/50 mb-4 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-amber-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <i class="fa-solid fa-music"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-amber-700 dark:text-amber-400 text-sm">Repertorio Activo</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-400"><span id="repertorioPreviewCount">0</span> canción(es) en lista</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleRepertorio()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 min-h-[40px]">
+                        <i class="fa-solid fa-eye"></i> Ver Lista
+                    </button>
+                </div>
+            </div>
+
+            <div id="repertorioContainer" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <!-- Drop Zone & Config -->
                 <div class="lg:col-span-1 space-y-4">
-                    <div class="bg-slate-50 dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
                         <!-- Drop Zone -->
                         <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-center hover:border-amber-500 transition cursor-pointer mb-4" onclick="document.getElementById('pptxInput').click()">
                             <i class="fa-solid fa-file-powerpoint text-3xl text-slate-400 mb-2"></i>
@@ -311,12 +381,12 @@
                              <div>
                                 <label class="text-xs text-slate-400 uppercase font-bold">Nombre del Archivo Final</label>
                                 <input type="text" id="repertoireFileName" placeholder="Ej: Servicio_Domingo" 
-                                    class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-amber-500 outline-none mt-1 transition-colors">
+                                    class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-amber-500 outline-none mt-1 transition-colors text-base">
                             </div>
-                            <button onclick="downloadSetlist()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2">
+                            <button onclick="downloadSetlist()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2 text-base min-h-[44px]">
                                 <i class="fa-solid fa-file-powerpoint"></i> Descargar Repertorio Completo
                             </button>
-                            <button onclick="clearRepertoire()" class="w-full bg-slate-200 hover:bg-red-200 dark:bg-slate-700 dark:hover:bg-red-900/50 text-slate-700 dark:text-white hover:text-red-700 dark:hover:text-red-200 py-2 rounded transition text-xs font-bold border border-transparent hover:border-red-300 dark:hover:border-red-800">
+                            <button onclick="clearRepertoire()" class="w-full bg-slate-200 hover:bg-red-200 dark:bg-slate-700 dark:hover:bg-red-900/50 text-slate-700 dark:text-white hover:text-red-700 dark:hover:text-red-200 py-2.5 rounded transition text-xs sm:text-sm font-bold border border-transparent hover:border-red-300 dark:hover:border-red-800 min-h-[44px]">
                                 <i class="fa-solid fa-trash"></i> Limpiar Lista
                             </button>
                         </div>
@@ -337,13 +407,19 @@
         </section>
 
         <!-- SECCIÓN 3: UNIR PDFS -->
-        <section id="pdf-merger" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-            <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-blue-500 dark:text-blue-400">
-                <i class="fa-solid fa-file-circle-plus"></i> Unir PDFs (Partituras / Letras)
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <section id="pdf-merger" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+                <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-blue-500 dark:text-blue-400">
+                    <i class="fa-solid fa-file-circle-plus"></i> Unir PDFs (Partituras / Letras)
+                </h2>
+                <button onclick="togglePdfMerger()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
+                    <i id="pdfMergerIcon" class="fa-solid fa-chevron-down"></i>
+                    <span id="pdfMergerText">Mostrar</span>
+                </button>
+            </div>
+            <div id="pdfMergerContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 <div>
-                    <div class="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 text-center border-dashed border-2 border-slate-300 dark:border-slate-600 hover:border-blue-500 transition cursor-pointer transition-colors" onclick="document.getElementById('pdfInput').click()">
+                    <div class="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-700 text-center border-dashed border-2 border-slate-300 dark:border-slate-600 hover:border-blue-500 transition cursor-pointer transition-colors" onclick="document.getElementById('pdfInput').click()">
                         <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-3"></i>
                         <p class="text-sm font-bold text-slate-700 dark:text-white">Haz clic para subir PDFs</p>
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona múltiples archivos para unirlos</p>
@@ -352,9 +428,9 @@
                     <div class="mt-4">
                         <label class="text-xs text-slate-400 uppercase font-bold">Nombre del archivo final</label>
                         <input type="text" id="mergedFileName" placeholder="Ej: Repertorio_Domingo" 
-                            class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none mt-1 transition-colors">
+                            class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none mt-1 transition-colors text-base">
                     </div>
-                    <button onclick="mergePdfs()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2">
+                    <button onclick="mergePdfs()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2 text-base min-h-[44px]">
                         <i class="fa-solid fa-object-group"></i> Unir y Descargar
                     </button>
                     <div id="mergeLoader" class="hidden flex items-center justify-center gap-2 mt-2 text-sm text-blue-400">
@@ -378,34 +454,34 @@
 
     <!-- Modal de Edición Individual -->
     <div id="editModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[60] p-4 backdrop-blur-sm">
-        <div class="bg-slate-800 p-6 rounded-xl w-full max-w-lg shadow-2xl border border-slate-700 transform transition-all">
+        <div class="bg-slate-800 p-4 sm:p-6 rounded-xl w-full max-w-lg shadow-2xl border border-slate-700 transform transition-all">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white">Editar Slide <span id="editModalIndex" class="text-blue-500"></span></h3>
-                <button onclick="copyToClipboard('editSlideText')" class="text-xs bg-slate-700 hover:bg-green-600 px-2 py-1 rounded text-white transition">
-                    <i class="fa-regular fa-copy"></i> Copiar Texto
+                <h3 class="text-lg sm:text-xl font-bold text-white">Editar Slide <span id="editModalIndex" class="text-blue-500"></span></h3>
+                <button onclick="copyToClipboard('editSlideText')" class="text-xs bg-slate-700 hover:bg-green-600 px-3 py-2 rounded text-white transition min-h-[40px] min-w-[40px] flex items-center justify-center">
+                    <i class="fa-regular fa-copy"></i> <span class="hidden sm:inline ml-1">Copiar</span>
                 </button>
             </div>
-            <textarea id="editSlideText" rows="6" class="w-full bg-slate-900 border border-slate-600 rounded p-4 mb-4 text-white focus:outline-none focus:border-blue-500 text-lg"></textarea>
+            <textarea id="editSlideText" rows="6" class="w-full bg-slate-900 border border-slate-600 rounded p-4 mb-4 text-white focus:outline-none focus:border-blue-500 text-base sm:text-lg"></textarea>
             <div class="flex justify-end gap-3">
-                <button onclick="closeEditModal()" class="px-4 py-2 rounded bg-slate-700 hover:bg-slate-600 text-white transition">Cancelar</button>
-                <button onclick="saveEditSlide()" class="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 font-bold text-white transition">Guardar</button>
+                <button onclick="closeEditModal()" class="px-4 py-3 rounded bg-slate-700 hover:bg-slate-600 text-white transition text-base min-h-[44px]">Cancelar</button>
+                <button onclick="saveEditSlide()" class="px-4 py-3 rounded bg-blue-600 hover:bg-blue-700 font-bold text-white transition text-base min-h-[44px]">Guardar</button>
             </div>
         </div>
     </div>
 
     <!-- Modal Galería -->
-    <div id="galleryModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[70] p-4 backdrop-blur-sm">
-        <div class="bg-slate-800 rounded-xl w-full max-w-3xl shadow-2xl border border-slate-700 flex flex-col max-h-[80vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-images text-indigo-500"></i> Galería de Fondos</h3>
-                <button onclick="closeGallery()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <div id="galleryModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[70] p-2 sm:p-4 backdrop-blur-sm">
+        <div class="bg-slate-800 rounded-xl w-full max-w-3xl shadow-2xl border border-slate-700 flex flex-col max-h-[90vh] sm:max-h-[80vh]">
+            <div class="p-3 sm:p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg sm:text-xl font-bold text-white"><i class="fa-solid fa-images text-indigo-500"></i> Galería de Fondos</h3>
+                <button onclick="closeGallery()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <div class="p-4 overflow-y-auto custom-scroll flex-1">
+            <div class="p-2 sm:p-4 overflow-y-auto custom-scroll flex-1">
                 <div id="galleryGrid" class="gallery-grid">
                     <!-- Las imágenes se cargan aquí -->
                 </div>
             </div>
-            <div class="p-3 bg-slate-900 rounded-b-xl text-xs text-slate-500 text-center">
+            <div class="p-2 sm:p-3 bg-slate-900 rounded-b-xl text-xs text-slate-500 text-center">
                 Click en una imagen para aplicar.
             </div>
         </div>
