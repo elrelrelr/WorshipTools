@@ -1,30 +1,9 @@
 
         // --- DATA ---
-        const galleryImages = [
-            "https://keephere.ru/get/31WNLyj5Eq7I_Cl/o/photo_2026-01-26_22-32-48.jpg",
-            "https://keephere.ru/get/D7kNLyj5VR5xy2Q/o/photo_2026-01-26_22-30-49.jpg",
-            "https://keephere.ru/get/baSNLyj5dS8pR3i/o/photo_2026-01-26_22-28-19.jpg",
-            "https://keephere.ru/get/lOVNLyj5l_S_wwE/o/photo_2026-01-26_22-28-16.jpg",
-            "https://keephere.ru/get/xS5NLyj5s4Ykhaf/o/photo_2026-01-26_22-28-12.jpg",
-            "https://keephere.ru/get/z8lNLyj5zMHQrO1/o/photo_2026-01-26_22-28-07.jpg",
-            "https://keephere.ru/get/IZjNLyj57OOtTXs/o/photo_2026-01-26_22-28-04.jpg",
-            "https://keephere.ru/get/AqRNLyj6Bf7573d/o/photo_2026-01-26_22-28-35.jpg",
-            "https://keephere.ru/get/gAPNLyj6IUDGB-i/o/photo_2026-01-26_22-28-31.jpg",
-            "https://keephere.ru/get/HFnNLyj6On757G7/o/photo_2026-01-26_22-28-28.jpg",
-            "https://keephere.ru/get/oMMNLyj6VaDkVHu/o/photo_2026-01-26_22-28-23.jpg",
-            "https://keephere.ru/get/pO9NLyj613YrdIm/o/photo_2026-01-26_22-12-19.jpg",
-            "https://keephere.ru/get/Qq4NLyj7C_9g_L1/o/photo_2026-01-26_22-12-12.jpg",
-            "https://keephere.ru/get/CqLNLyj7JL4Fd8_/o/photo_2026-01-26_22-12-08.jpg",
-            "https://keephere.ru/get/J5TNLyj7PyBPeJM/o/photo_2026-01-26_22-12-04.jpg",
-            "https://keephere.ru/get/8uLNLyj7ydb58IW/o/photo_2026-01-26_22-12-01.jpg",
-            "https://keephere.ru/get/kslNLyj75m5Wsjb/o/photo_2026-01-26_22-11-57.jpg",
-            "https://keephere.ru/get/neCNLyj7_zj_53k/o/photo_2026-01-26_22-11-52.jpg",
-            "https://keephere.ru/get/kAbNLyj8F9Lk65f/o/photo_2026-01-26_22-11-47.jpg",
-            "https://keephere.ru/get/Ld7NLyj8MH2DENX/o/photo_2026-01-26_22-12-26.jpg",
-            "https://keephere.ru/get/OzlNLyj8Tnl2OPW/o/photo_2026-01-26_22-12-23.jpg",
-            "https://keephere.ru/get/PNLyj8XyvBq/o/photo.jpg",
-            "https://keephere.ru/get/6tvNLyj682jwIKc/o/photo_2026-01-26_22-12-15.jpg"
-        ];
+        const galleryImages = [];
+        for (let i = 1; i <= 23; i++) {
+            galleryImages.push(`imagenes/fondo${i}.jpg`);
+        }
 
         // --- ESTADO ---
         let slidesData = [];
@@ -304,11 +283,15 @@
             galleryImages.forEach(url => {
                 const item = document.createElement('div');
                 item.className = 'gallery-item bg-slate-700 animate-pulse';
-                item.style.backgroundImage = `url(${url})`;
                 item.onclick = () => selectGalleryImage(url);
-                const img = new Image();
+                
+                const img = document.createElement('img');
                 img.src = url;
+                img.loading = 'lazy';
+                img.className = 'w-full h-full object-cover rounded-lg';
                 img.onload = () => item.classList.remove('animate-pulse');
+                
+                item.appendChild(img);
                 grid.appendChild(item);
             });
             document.getElementById('galleryModal').classList.remove('hidden');
