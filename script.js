@@ -203,7 +203,7 @@ function searchExternal(type) {
     let url = "";
     switch (type) {
         case 'youtube': url = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`; break;
-        case 'lyrics': url = `https://www.google.com/search?q=${encodeURIComponent(q + " letra lyrics")}`; break;
+        case 'lyrics': url = `https://www.letras.com/?q=${encodeURIComponent(q)}`; break;
         case 'chords': url = `https://www.google.com/search?q=${encodeURIComponent(q + " acordes chords")}`; break;
         case 'drums': url = `https://www.youtube.com/results?search_query=${encodeURIComponent(q + " drum cover bateria")}`; break;
         case 'piano': url = `https://www.youtube.com/results?search_query=${encodeURIComponent(q + " piano tutorial")}`; break;
@@ -230,7 +230,7 @@ function processLyrics() {
     if (addTitle) {
         const name = toTitleCase(document.getElementById('songName').value || "Título");
         const auth = toTitleCase(document.getElementById('songAuthor').value || "");
-        slidesData.push(`${name}\n\n${auth}`);
+        slidesData.push(`${name}\n${auth}`);
     }
     if (text.trim()) {
         const lines = text.split('\n');
@@ -251,8 +251,17 @@ function processLyrics() {
 }
 
 function clearSlides() {
+    // Limpiar Editor
     document.getElementById('lyricsInput').value = '';
     slidesData = [];
+    
+    // Limpiar Generador de Etiquetas y Recursos
+    document.getElementById('songName').value = '';
+    document.getElementById('songAuthor').value = '';
+    document.getElementById('resultOutput').value = '';
+    document.getElementById('exportFileName').value = '';
+    generatedTagString = "";
+    
     renderSlides();
     renderQuickCopyList();
 }
@@ -268,18 +277,84 @@ function renderSlides() {
     slidesData.forEach((text, i) => {
         const slide = document.createElement('div');
         slide.className = 'slide-preview rounded-lg';
-        slide.onclick = () => openEditModal(i);
+        
         const num = document.createElement('div');
         num.className = 'slide-number';
         num.innerText = i + 1;
+        
         const content = document.createElement('div');
         content.className = 'slide-content';
         content.innerText = text;
+
+        // Overlay de acciones
+        const overlay = document.createElement('div');
+        overlay.className = 'slide-overlay';
+
+        // Botón Editar
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'overlay-btn';
+        btnEdit.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        btnEdit.title = "Editar Texto";
+        btnEdit.onclick = (e) => { e.stopPropagation(); openEditModal(i); };
+
+        // Botón Agregar Vacío
+        const btnAdd = document.createElement('button');
+        btnAdd.className = 'overlay-btn add';
+        btnAdd.innerHTML = '<i class="fa-solid fa-plus"></i>';
+        btnAdd.title = "Agregar Diapositiva en Blanco Después";
+        btnAdd.onclick = (e) => { e.stopPropagation(); addBlankSlideAfter(i); };
+
+        // Botón Eliminar
+        const btnDel = document.createElement('button');
+        btnDel.className = 'overlay-btn delete';
+        btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        btnDel.title = "Eliminar Diapositiva";
+        btnDel.onclick = (e) => { e.stopPropagation(); deleteSlide(i); };
+
+        overlay.appendChild(btnEdit);
+        overlay.appendChild(btnAdd);
+        overlay.appendChild(btnDel);
+        
         slide.appendChild(num);
         slide.appendChild(content);
+        slide.appendChild(overlay);
         container.appendChild(slide);
     });
     updateStyles();
+}
+
+function deleteSlide(index) {
+    slidesData.splice(index, 1);
+    syncSlidesToLyrics();
+    renderSlides();
+    renderQuickCopyList();
+}
+
+function addBlankSlideAfter(index) {
+    slidesData.splice(index + 1, 0, " ");
+    syncSlidesToLyrics();
+    renderSlides();
+    renderQuickCopyList();
+}
+
+// Sincroniza los cambios manuales de la vista previa de vuelta al área de texto
+function syncSlidesToLyrics() {
+    let lyricsSlides = [...slidesData];
+    
+    const addBlank = document.getElementById('addBlankSlide').checked;
+    const addTitle = document.getElementById('addTitleSlide').checked;
+    
+    // Quitar las que se generan dinámicamente para no ensuciar el textarea con duplicados
+    if (addTitle && lyricsSlides.length > 0) {
+        // La de título suele ser la primera (o segunda si hay blanco inicial)
+        lyricsSlides.splice(addBlank ? 1 : 0, 1);
+    }
+    if (addBlank && lyricsSlides.length > 0) {
+        lyricsSlides.splice(0, 1);
+    }
+
+    // Unir con doble salto de línea para que el procesador los reconozca como bloques
+    document.getElementById('lyricsInput').value = lyricsSlides.join('\n\n');
 }
 
 function updateStyles() {
@@ -417,6 +492,7 @@ function closeEditModal() {
 function saveEditSlide() {
     if (currentEditingIndex > -1) {
         slidesData[currentEditingIndex] = document.getElementById('editSlideText').value;
+        syncSlidesToLyrics();
         renderSlides();
         renderQuickCopyList();
         closeEditModal();
@@ -916,26 +992,46 @@ function parseImportedSong(content) {
     
     let title = "";
     let author = "";
+    let background = "";
     let lyrics = [];
     let inLyrics = false;
+    let inYaml = false;
     
-    for (let line of lines) {
-        line = line.trim();
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
         
-        // Detectar título (# Título o ## Título)
-        if (line.match(/^#+\s+(.+)/)) {
-            const match = line.match(/^#+\s+(.+)/);
-            if (!title) {
-                title = match[1];
+        // Detectar inicio/fin de YAML Front Matter
+        if (line === "---") {
+            if (i === 0 && !inYaml) {
+                inYaml = true;
+                continue;
+            } else if (inYaml) {
+                inYaml = false;
+                continue;
             }
+        }
+        
+        if (inYaml) {
+            if (line.startsWith('title:')) title = line.replace('title:', '').trim();
+            if (line.startsWith('author:')) author = line.replace('author:', '').trim();
+            if (line.startsWith('background:')) background = line.replace('background:', '').trim();
             continue;
         }
         
-        // Detectar autor (opcional: ## Autor o @autor)
-        if (line.match(/^@|\*\*Autor:\*\*|Autor:/i) && !author) {
-            const authorMatch = line.replace(/^@|\*\*Autor:\*\*|Autor:/i, '').trim();
-            if (authorMatch) author = authorMatch;
-            continue;
+        // Detectar título (# Título) fuera de YAML - Regex más flexible
+        if (line.match(/^#+\s*(.*)/)) {
+            if (!title) {
+                title = line.replace(/^#+\s*/, '').trim();
+            }
+            continue; // Siempre saltar la línea del título en el body
+        }
+        
+        // Detectar autor (**Autor:**, Autor:, @) - Regex más flexible
+        if (line.match(/^(\*\*Autor:\*\*|Autor:|@)\s*(.*)/i)) {
+            if (!author) {
+                author = line.replace(/^(\*\*Autor:\*\*|Autor:|@)\s*/i, '').trim();
+            }
+            continue; // Siempre saltar la línea del autor en el body
         }
         
         // Detectar separadores de estrofas (líneas vacías)
@@ -953,42 +1049,47 @@ function parseImportedSong(content) {
         }
     }
     
-    // Si no se encontró título, usar el nombre del archivo
-    if (!title && lyrics.length > 0) {
-        title = lyrics[0].substring(0, 50);
-    }
-    
     // Cargar al editor
-    if (title) {
-        document.getElementById('songName').value = title;
-    }
-    if (author) {
-        document.getElementById('songAuthor').value = author;
-    }
+    document.getElementById('songName').value = title || "";
+    document.getElementById('songAuthor').value = author || "";
+    
     if (lyrics.length > 0) {
-        // Unir las líneas respetando los saltos de línea
-        const lyricsText = lyrics.join('\n');
+        // Limpiar saltos de línea sobrantes al inicio/final
+        const lyricsText = lyrics.join('\n').trim();
         document.getElementById('lyricsInput').value = lyricsText;
     }
     
-    // Regenerar etiqueta y procesar
+    // Cargar Fondo si existe
+    if (background && background !== "null") {
+        bgImageData = background;
+    } else {
+        bgImageData = null;
+    }
+    
+    // Actualizar vista
+    updateStyles();
     generateTag();
     processLyrics();
     
-    alert(`Canción "${title}" importada correctamente.`);
+    alert(`Canción "${title || 'Importada'}" cargada correctamente.`);
 }
 
 // También permitir importar canciones guardadas previamente (exportar como .md)
 function exportSongAsMarkdown() {
     const name = document.getElementById('songName').value.trim() || "Sin título";
     const author = document.getElementById('songAuthor').value.trim();
-    const lyrics = document.getElementById('lyricsInput').value;
+    const lyrics = document.getElementById('lyricsInput').value.trim();
     
-    let markdown = `# ${name}\n`;
+    let markdown = "---\n";
+    markdown += `title: ${name}\n`;
+    if (author) markdown += `author: ${author}\n`;
+    if (bgImageData) markdown += `background: ${bgImageData}\n`;
+    markdown += "---\n\n";
+    
+    // Header en el body para compatibilidad con otros lectores MD
+    markdown += `# ${name}\n`;
     if (author) {
-        markdown += `**Autor:** ${author}\n\n`;
-    } else {
-        markdown += `\n`;
+        markdown += `**Autor:** ${author}\n`;
     }
     markdown += `\n${lyrics}`;
     
@@ -1001,5 +1102,130 @@ function exportSongAsMarkdown() {
     a.click();
     URL.revokeObjectURL(url);
     
-    alert("Canción exportada como archivo .md");
+    alert("Canción exportada como archivo .md (con fondo y metadatos)");
+}
+
+// --- CONVERTIR PPTX A MD (FORMATO IMPORTABLE) ---
+async function convertPptxToMd(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    if (!file.name.toLowerCase().endsWith('.pptx')) {
+        alert("Por favor, selecciona un archivo .pptx válido.");
+        return;
+    }
+    
+    showGlobalLoader("Analizando PowerPoint...");
+    
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        
+        // 1. Extraer texto de las diapositivas (slideX.xml)
+        const slideFiles = Object.keys(zip.files).filter(name => 
+            name.match(/ppt\/slides\/slide\d+\.xml$/)
+        ).sort((a, b) => {
+            const numA = parseInt(a.match(/\d+/)[0]);
+            const numB = parseInt(b.match(/\d+/)[0]);
+            return numA - numB;
+        });
+        
+        let allTexts = [];
+        let title = "";
+        let author = "";
+        
+        // 2. Extraer metadatos (título y autor) de core.xml
+        if (zip.files['docProps/core.xml']) {
+            const coreXml = await zip.files['docProps/core.xml'].async('string');
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(coreXml, "text/xml");
+            title = xmlDoc.getElementsByTagName("dc:title")[0]?.textContent || "";
+            author = xmlDoc.getElementsByTagName("dc:creator")[0]?.textContent || "";
+        }
+
+        for (let i = 0; i < slideFiles.length; i++) {
+            const slideXml = await zip.files[slideFiles[i]].async('string');
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(slideXml, "text/xml");
+            
+            // Extraer texto de los nodos <a:t>
+            const textNodes = xmlDoc.getElementsByTagName("a:t");
+            let slideText = "";
+            for (let node of textNodes) {
+                slideText += node.textContent + " ";
+            }
+            slideText = slideText.trim();
+
+            // FILTRO: Ignorar diapositivas que solo contienen basura de la librería o están vacías
+            if (slideText && !slideText.toLowerCase().includes("pptxgenjs")) {
+                // Si no hay título de metadatos o el título actual es genérico, intentar extraerlo
+                if ((!title || title.toLowerCase().includes("pptxgenjs")) && i === 0) {
+                    const lines = slideText.split(/\n/);
+                    title = lines[0].substring(0, 100).trim();
+                    if (lines.length > 1 && !author) author = lines[1].trim();
+                } else {
+                    allTexts.push(slideText);
+                }
+            }
+        }
+        
+        // Limpieza final de título y autor por si acaso
+        if (title && title.toLowerCase().includes("pptxgenjs")) title = file.name.replace(/\.pptx$/i, '');
+        if (author && author.toLowerCase().includes("pptxgenjs")) author = "";
+        
+        // 3. Construir el contenido MD
+        let markdown = "---\n";
+        markdown += `title: ${title}\n`;
+        if (author) markdown += `author: ${author}\n`;
+        markdown += `background: null\n`;
+        markdown += `---\n\n`;
+        
+        markdown += `# ${title}\n`;
+        if (author) markdown += `**Autor:** ${author}\n`;
+        markdown += `\n`;
+        
+        // Unir el texto de todas las diapositivas
+        if (allTexts.length > 0) {
+            markdown += allTexts.join('\n\n');
+        } else {
+            markdown += "*No se pudo extraer texto significativo del archivo PPTX.*";
+        }
+        
+        // 4. Descargar el archivo MD
+        const blob = new Blob([markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeName = title.replace(/[^a-z0-9]/gi, '_');
+        a.download = `${safeName}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert(`✅ ¡Conversión exitosa!\n\nTítulo: ${title}\nDiapositivas procesadas: ${allTexts.length}\n\nAhora puedes usar el botón "Importar .md" en el editor para cargar la canción.`);
+        
+    } catch (error) {
+        console.error("Error al convertir PPTX:", error);
+        alert("Error al procesar el archivo PPTX: " + error.message);
+    } finally {
+        hideGlobalLoader();
+        input.value = ""; // Limpiar input
+    }
+}
+
+// --- HELPERS DE UI ---
+function showGlobalLoader(text) {
+    const loader = document.getElementById('globalLoader');
+    if (loader) {
+        loader.querySelector('p').innerText = text || "Cargando...";
+        loader.classList.remove('hidden');
+        loader.classList.add('flex');
+    }
+}
+
+function hideGlobalLoader() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) {
+        loader.classList.add('hidden');
+        loader.classList.remove('flex');
+    }
 }

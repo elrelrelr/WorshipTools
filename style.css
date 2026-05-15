@@ -25,6 +25,58 @@
             border-color: #3b82f6;
         }
 
+        /* Overlay de opciones en hover */
+        .slide-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 30;
+            backdrop-blur: 2px;
+        }
+        
+        .slide-preview:hover .slide-overlay {
+            opacity: 1;
+        }
+
+        .overlay-btn {
+            background: #3b82f6;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .overlay-btn:hover {
+            transform: scale(1.15);
+            background-color: #2563eb;
+        }
+
+        .overlay-btn.delete {
+            background-color: #ef4444;
+        }
+        .overlay-btn.delete:hover {
+            background-color: #dc2626;
+        }
+
+        .overlay-btn.add {
+            background-color: #10b981;
+        }
+        .overlay-btn.add:hover {
+            background-color: #059669;
+        }
+
         .slide-content {
             position: absolute;
             inset: 0;
@@ -228,3 +280,7 @@
                 font-size: 1.5rem;
             }
         }
+        .Limpiar-todo {
+            color: #7fffd4;
+        }
+      
