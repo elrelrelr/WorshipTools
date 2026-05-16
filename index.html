@@ -175,12 +175,15 @@
                         <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
                             class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors text-base"></textarea>
                         
-                        <div class="flex gap-4 mt-2 mb-3">
+                        <div class="flex flex-wrap gap-4 mt-2 mb-3">
                              <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <input type="checkbox" id="addBlankSlide" checked class="accent-blue-500"> +Slide Vacío
                             </label>
                             <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <input type="checkbox" id="addTitleSlide" checked class="accent-blue-500"> +Portada
+                            </label>
+                            <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="bgTransparency" onchange="updateStyles()" class="accent-blue-500"> Imagen Tenue
                             </label>
                         </div>
 
@@ -526,6 +529,19 @@
     </div>
 
     <div id="panelOverlay" onclick="toggleQuickCopy()" class="fixed inset-0 bg-black/50 z-[65] hidden transition-opacity"></div>
+
+    <!-- Modal Proyección (Pantalla Completa) -->
+    <div id="projectionModal" class="fixed inset-0 bg-black hidden items-center justify-center z-[100] cursor-pointer" onclick="closeProjection()">
+        <div id="projectionContent" class="w-full h-full flex items-center justify-center relative overflow-hidden">
+            <!-- El contenido se genera dinámicamente -->
+        </div>
+        <div class="absolute top-4 right-4 text-white/30 hover:text-white transition-colors z-[110] text-2xl p-2">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/20 text-xs font-mono uppercase tracking-widest pointer-events-none">
+            Modo Proyección - Click para salir
+        </div>
+    </div>
 
     <!-- Loader Global -->
     <div id="globalLoader" class="fixed inset-0 bg-black/80 z-[80] hidden items-center justify-center flex-col gap-4">

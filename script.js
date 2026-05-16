@@ -8,6 +8,7 @@ for (let i = 1; i <= 23; i++) {
 let slidesData = [];
 let bgImageData = null;
 let currentEditingIndex = -1;
+let currentProjectionIndex = -1;
 
 let currentAlignment = 'center';
 let currentVerticalAlignment = 'center';
@@ -220,7 +221,10 @@ function searchExternal(type) {
 // --- PROCESAMIENTO DE SLIDES ---
 function processLyrics() {
     generateTag();
-    const text = document.getElementById('lyricsInput').value;
+    const rawText = document.getElementById('lyricsInput').value;
+    // Normalizar saltos de línea y limpiar espacios raros
+    const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
     const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 2;
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
@@ -232,16 +236,25 @@ function processLyrics() {
         const auth = toTitleCase(document.getElementById('songAuthor').value || "");
         slidesData.push(`${name}\n${auth}`);
     }
-    if (text.trim()) {
+    
+    if (text.length > 0) {
         const lines = text.split('\n');
         let chunk = [];
         for (let line of lines) {
-            line = line.trim();
+            // Una línea es un separador SOLO si está TOTALMENTE VACÍA
             if (line === "") {
-                if (chunk.length > 0) { slidesData.push(chunk.join('\n')); chunk = []; }
+                if (chunk.length > 0) { 
+                    slidesData.push(chunk.join('\n')); 
+                    chunk = []; 
+                }
             } else {
-                chunk.push(line);
-                if (chunk.length >= maxLines) { slidesData.push(chunk.join('\n')); chunk = []; }
+                const cleanLine = line.trim() || " "; 
+                chunk.push(cleanLine);
+                
+                if (chunk.length >= maxLines) { 
+                    slidesData.push(chunk.join('\n')); 
+                    chunk = []; 
+                }
             }
         }
         if (chunk.length > 0) slidesData.push(chunk.join('\n'));
@@ -262,6 +275,10 @@ function clearSlides() {
     document.getElementById('exportFileName').value = '';
     generatedTagString = "";
     
+    // Resetear opciones automáticas para un inicio limpio
+    document.getElementById('addBlankSlide').checked = true;
+    document.getElementById('addTitleSlide').checked = true;
+    
     renderSlides();
     renderQuickCopyList();
 }
@@ -276,7 +293,8 @@ function renderSlides() {
     }
     slidesData.forEach((text, i) => {
         const slide = document.createElement('div');
-        slide.className = 'slide-preview rounded-lg';
+        slide.className = 'slide-preview rounded-lg cursor-grab active:cursor-grabbing';
+        slide.dataset.index = i;
         
         const num = document.createElement('div');
         num.className = 'slide-number';
@@ -311,6 +329,14 @@ function renderSlides() {
         btnDel.title = "Eliminar Diapositiva";
         btnDel.onclick = (e) => { e.stopPropagation(); deleteSlide(i); };
 
+        // Botón Proyectar (NUEVO)
+        const btnProject = document.createElement('button');
+        btnProject.className = 'overlay-btn project';
+        btnProject.innerHTML = '<i class="fa-solid fa-desktop"></i>';
+        btnProject.title = "Proyectar Diapositiva (Pantalla Completa)";
+        btnProject.onclick = (e) => { e.stopPropagation(); openProjection(i); };
+
+        overlay.appendChild(btnProject);
         overlay.appendChild(btnEdit);
         overlay.appendChild(btnAdd);
         overlay.appendChild(btnDel);
@@ -321,10 +347,177 @@ function renderSlides() {
         container.appendChild(slide);
     });
     updateStyles();
+
+    // Inicializar Sortable para las diapositivas
+    if (container && typeof Sortable !== 'undefined' && slidesData.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            ghostClass: 'opacity-40',
+            dragClass: 'opacity-10',
+            handle: '.slide-preview', // Se puede arrastrar desde cualquier parte de la diapositiva
+            onEnd: function (evt) {
+                if (evt.oldIndex !== evt.newIndex) {
+                    const item = slidesData.splice(evt.oldIndex, 1)[0];
+                    slidesData.splice(evt.newIndex, 0, item);
+                    
+                    // Al reordenar manualmente, desactivamos las opciones automáticas 
+                    // para que el textarea refleje exactamente el nuevo orden y no se dupliquen al procesar
+                    document.getElementById('addBlankSlide').checked = false;
+                    document.getElementById('addTitleSlide').checked = false;
+
+                    renderSlides();
+                    syncSlidesToLyrics();
+                    renderQuickCopyList();
+                }
+            }
+        });
+    }
 }
+
+// --- PROYECCIÓN (PANTALLA COMPLETA) ---
+let touchStartX = 0;
+
+function openProjection(index) {
+    currentProjectionIndex = index;
+    renderProjectionSlide();
+    
+    const modal = document.getElementById('projectionModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Intentar activar Fullscreen de navegador si es posible
+    if (modal.requestFullscreen) {
+        modal.requestFullscreen();
+    }
+
+    // Agregar listeners de touch para navegación por gestos (swipe)
+    modal.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    modal.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        handleSwipe(touchStartX, touchEndX);
+    }, { passive: true });
+}
+
+function renderProjectionSlide() {
+    if (currentProjectionIndex < 0 || currentProjectionIndex >= slidesData.length) return;
+    
+    const content = document.getElementById('projectionContent');
+    const slideText = slidesData[currentProjectionIndex];
+    const transparency = document.getElementById('bgTransparency').checked;
+
+    // Estilos actuales
+    const font = document.getElementById('fontFamily').value;
+    const color = document.getElementById('textColor').value;
+    const shadow = document.getElementById('textShadow').checked;
+    const isBold = document.getElementById('textBold').checked;
+    const size = document.getElementById('fontSize').value;
+    const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
+
+    content.innerHTML = '';
+    
+    // Configurar Fondo
+    if (bgImageData) {
+        if (transparency) {
+            // Efecto 'Tenue': difumina la imagen hacia negro para la proyección
+            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url(${bgImageData})`;
+        } else {
+            content.style.backgroundImage = `url(${bgImageData})`;
+        }
+        content.style.backgroundSize = 'cover';
+        content.style.backgroundPosition = 'center';
+    } else {
+        content.style.backgroundColor = 'black';
+        content.style.backgroundImage = 'none';
+    }
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'projection-text';
+    textDiv.innerText = slideText;
+    
+    // Aplicar estilos
+    textDiv.style.fontFamily = font;
+    textDiv.style.color = color;
+    textDiv.style.textAlign = currentAlignment;
+    textDiv.style.justifyContent = 'center';
+    textDiv.style.alignItems = vAlignMap[currentVerticalAlignment];
+    
+    // Escalar tamaño
+    const scaleFactor = window.innerHeight / 500; 
+    textDiv.style.fontSize = `${parseInt(size) * scaleFactor}px`;
+    
+    textDiv.style.fontWeight = isBold ? 'bold' : 'normal';
+    textDiv.style.textShadow = shadow ? '4px 4px 8px rgba(0,0,0,0.9)' : 'none';
+
+    content.appendChild(textDiv);
+}
+
+function nextProjectionSlide() {
+    if (currentProjectionIndex < slidesData.length - 1) {
+        currentProjectionIndex++;
+        renderProjectionSlide();
+    }
+}
+
+function prevProjectionSlide() {
+    if (currentProjectionIndex > 0) {
+        currentProjectionIndex--;
+        renderProjectionSlide();
+    }
+}
+
+function handleSwipe(start, end) {
+    const threshold = 50; // Pixeles mínimos para detectar swipe
+    if (start - end > threshold) {
+        // Swipe a la izquierda -> Siguiente
+        nextProjectionSlide();
+    } else if (end - start > threshold) {
+        // Swipe a la derecha -> Anterior
+        prevProjectionSlide();
+    }
+}
+
+function closeProjection() {
+    const modal = document.getElementById('projectionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentProjectionIndex = -1;
+    
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    }
+}
+
+// Escuchar teclas para navegación
+document.addEventListener('keydown', (e) => {
+    // Si la proyección está activa
+    if (currentProjectionIndex !== -1) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+            e.preventDefault();
+            nextProjectionSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Backspace' || e.key === 'PageUp') {
+            e.preventDefault();
+            prevProjectionSlide();
+        }
+    }
+
+    if (e.key === 'Escape') {
+        closeProjection();
+        closeEditModal();
+        closeGallery();
+        if (!document.getElementById('quickCopyPanel').classList.contains('translate-x-full')) {
+            toggleQuickCopy();
+        }
+    }
+});
 
 function deleteSlide(index) {
     slidesData.splice(index, 1);
+    // Si borramos, también desactivamos opciones automáticas para mantener sincronía total
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
     syncSlidesToLyrics();
     renderSlides();
     renderQuickCopyList();
@@ -332,6 +525,9 @@ function deleteSlide(index) {
 
 function addBlankSlideAfter(index) {
     slidesData.splice(index + 1, 0, " ");
+    // Si agregamos manualmente, desactivamos opciones automáticas
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
     syncSlidesToLyrics();
     renderSlides();
     renderQuickCopyList();
@@ -339,22 +535,35 @@ function addBlankSlideAfter(index) {
 
 // Sincroniza los cambios manuales de la vista previa de vuelta al área de texto
 function syncSlidesToLyrics() {
-    let lyricsSlides = [...slidesData];
+    // Al sincronizar manualmente (reordenar, editar, etc), 
+    // filtramos las diapositivas que se generan AUTOMÁTICAMENTE por el procesador (Título y Portada)
+    // para evitar duplicarlas cuando el usuario vuelva a presionar "Procesar".
     
+    let lyricsToSync = [...slidesData];
+    
+    // Si la primera diapositiva coincide con el Nombre/Autor actual, es probable que sea la de título automática
+    const currentName = toTitleCase(document.getElementById('songName').value || "Título");
+    const currentAuth = toTitleCase(document.getElementById('songAuthor').value || "");
+    const titleText = `${currentName}\n${currentAuth}`;
+    
+    // Solo removemos si están activas las opciones automáticas, indicando que queremos que el textarea
+    // sea solo la letra "pura".
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
     
-    // Quitar las que se generan dinámicamente para no ensuciar el textarea con duplicados
-    if (addTitle && lyricsSlides.length > 0) {
-        // La de título suele ser la primera (o segunda si hay blanco inicial)
-        lyricsSlides.splice(addBlank ? 1 : 0, 1);
+    if (addTitle && lyricsToSync.length > 0) {
+        // Buscamos si la de título está al inicio (considerando el blanco opcional)
+        const possibleTitleIndex = addBlank ? 1 : 0;
+        if (lyricsToSync[possibleTitleIndex] === titleText || lyricsToSync[possibleTitleIndex] === currentName) {
+            lyricsToSync.splice(possibleTitleIndex, 1);
+        }
     }
-    if (addBlank && lyricsSlides.length > 0) {
-        lyricsSlides.splice(0, 1);
+    if (addBlank && lyricsToSync.length > 0 && lyricsToSync[0].trim() === "") {
+        lyricsToSync.splice(0, 1);
     }
 
-    // Unir con doble salto de línea para que el procesador los reconozca como bloques
-    document.getElementById('lyricsInput').value = lyricsSlides.join('\n\n');
+    // Unir con doble salto de línea
+    document.getElementById('lyricsInput').value = lyricsToSync.join('\n\n');
 }
 
 function updateStyles() {
@@ -383,8 +592,14 @@ function updateStyles() {
     if (currentVerticalAlignment === 'bottom') document.getElementById('btnVAlignBottom').classList.add(btnBg);
 
     document.querySelectorAll('.slide-preview').forEach(slide => {
+        const transparency = document.getElementById('bgTransparency').checked;
         if (bgImageData) {
-            slide.style.backgroundImage = `url(${bgImageData})`;
+            // Efecto 'Tenue': difumina la imagen hacia el color de fondo (blanco en la vista previa)
+            if (transparency) {
+                slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+            } else {
+                slide.style.backgroundImage = `url(${bgImageData})`;
+            }
             slide.style.backgroundSize = 'cover';
             slide.style.backgroundPosition = 'center';
         } else {
@@ -492,6 +707,11 @@ function closeEditModal() {
 function saveEditSlide() {
     if (currentEditingIndex > -1) {
         slidesData[currentEditingIndex] = document.getElementById('editSlideText').value;
+        // Al editar manualmente, desactivamos las opciones automáticas 
+        // para que el textarea refleje exactamente el cambio y no se dupliquen al procesar
+        document.getElementById('addBlankSlide').checked = false;
+        document.getElementById('addTitleSlide').checked = false;
+        
         syncSlidesToLyrics();
         renderSlides();
         renderQuickCopyList();
@@ -576,7 +796,8 @@ function addToRepertoire() {
             align: currentAlignment,
             valign: currentVerticalAlignment,
             shadow: document.getElementById('textShadow').checked,
-            bgImage: bgImageData
+            bgImage: bgImageData,
+            bgTransparency: document.getElementById('bgTransparency').checked
         }
     };
 
@@ -626,7 +847,10 @@ function renderRepertoireList() {
                 </div>
             </div>
             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onclick="removeRepertoireItem(${index})" class="text-slate-400 hover:text-red-400 p-1">
+                <button onclick="loadFromRepertoire(${index})" class="text-slate-400 hover:text-blue-400 p-1" title="Cargar en el Editor">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </button>
+                <button onclick="removeRepertoireItem(${index})" class="text-slate-400 hover:text-red-400 p-1" title="Eliminar">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -645,6 +869,56 @@ function renderRepertoireList() {
             }
         });
     }
+}
+
+function loadFromRepertoire(index) {
+    const song = repertoireList[index];
+    if (!song) return;
+
+    if (slidesData.length > 0) {
+        if (!confirm("Esto reemplazará la canción actual en el editor. ¿Continuar?")) return;
+    }
+
+    // Cargar metadatos
+    // Intentar separar nombre de autor si están unidos con " - "
+    const parts = song.name.split(' - ');
+    document.getElementById('songName').value = parts[0] || "";
+    document.getElementById('songAuthor').value = parts[1] || "";
+
+    // Cargar estilos
+    const st = song.styles;
+    if (st) {
+        document.getElementById('fontFamily').value = st.font;
+        document.getElementById('fontSize').value = st.size;
+        document.getElementById('textColor').value = '#' + st.color;
+        document.getElementById('textBold').checked = st.bold;
+        document.getElementById('textShadow').checked = st.shadow;
+        currentAlignment = st.align;
+        currentVerticalAlignment = st.valign;
+        bgImageData = st.bgImage;
+        document.getElementById('bgTransparency').checked = st.bgTransparency || false;
+    }
+
+    // Cargar letra (slides)
+    // Usamos las diapositivas guardadas y las unimos con doble salto de línea
+    // Pero primero filtramos las que son automáticas (Título/Blanco) si es que están guardadas ahí
+    let slidesToLoad = [...song.slides];
+    
+    // El sync ya debería haber limpiado la letra antes de guardar, 
+    // pero por seguridad las unimos y dejamos que processLyrics haga su magia
+    document.getElementById('lyricsInput').value = slidesToLoad.join('\n\n');
+
+    // Resetear opciones automáticas para que no se dupliquen al procesar
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
+
+    // Actualizar todo
+    updateStyles();
+    generateTag();
+    processLyrics();
+    
+    // Hacer scroll al editor
+    scrollToSection('editorArea');
 }
 
 function escapeHtml(str) {
@@ -716,17 +990,19 @@ async function downloadSetlist() {
 
             // 2. RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
             for (let i = 0; i < song.slides.length; i++) {
-                let text = song.slides[i];
-                
-                // Saltar diapositivas que estén vacías (son las que el usuario NO quería)
-                if (text.trim() === "" || text === " ") {
-                    continue;
-                }
+                let text = song.slides[i].trim();
                 
                 let slide = pptx.addSlide();
                 
                 if (st.bgImage) {
                     slide.background = { data: st.bgImage };
+                    // Efecto 'Tenue' en PowerPoint: rectángulo blanco muy transparente para "aclarar" la imagen
+                    if (st.bgTransparency) {
+                        slide.addShape(pptx.ShapeType.rect, {
+                            x: 0, y: 0, w: '100%', h: '100%',
+                            fill: { color: 'FFFFFF', transparency: 20 } // 20% transparencia = 80% blanco (faded)
+                        });
+                    }
                 } else {
                     slide.background = { color: "FFFFFF" };
                 }
@@ -740,7 +1016,8 @@ async function downloadSetlist() {
                     align: alignMap[st.align] || 'center',
                     valign: vAlignMap[st.valign] || 'middle',
                     shadow: shadowOpts,
-                    paraSpaceAfter: 10
+                    paraSpaceAfter: 0,
+                    shrinkText: true
                 });
             }
         }
@@ -785,11 +1062,19 @@ async function downloadPPTX() {
         const isBold = document.getElementById('textBold').checked;
         const shadowOpts = shadow ? { type: 'outer', angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
 
-        for (let text of slidesData) {
+        for (let rawText of slidesData) {
+            let text = rawText.trim();
             let slide = pptx.addSlide();
 
             if (bgImageData) {
                 slide.background = { data: bgImageData };
+                // Capa Tenue si está activo
+                if (document.getElementById('bgTransparency').checked) {
+                    slide.addShape(pptx.ShapeType.rect, {
+                        x: 0, y: 0, w: '100%', h: '100%',
+                        fill: { color: '000000', transparency: 50 }
+                    });
+                }
             } else {
                 slide.background = { color: "FFFFFF" };
             }
@@ -803,7 +1088,8 @@ async function downloadPPTX() {
                 align: alignMap[currentAlignment] || 'center',
                 valign: vAlignMap[currentVerticalAlignment] || 'middle',
                 shadow: shadowOpts,
-                paraSpaceAfter: 10
+                paraSpaceAfter: 0,
+                shrinkText: true
             });
         }
 
@@ -998,7 +1284,8 @@ function parseImportedSong(content) {
     let inYaml = false;
     
     for (let i = 0; i < lines.length; i++) {
-        let line = lines[i].trim();
+        let rawLine = lines[i]; // No hacemos trim() aquí para no perder los espacios de diapositivas en blanco
+        let line = rawLine.trim();
         
         // Detectar inicio/fin de YAML Front Matter
         if (line === "---") {
@@ -1018,34 +1305,34 @@ function parseImportedSong(content) {
             continue;
         }
         
-        // Detectar título (# Título) fuera de YAML - Regex más flexible
+        // Detectar título (# Título) fuera de YAML
         if (line.match(/^#+\s*(.*)/)) {
             if (!title) {
                 title = line.replace(/^#+\s*/, '').trim();
             }
-            continue; // Siempre saltar la línea del título en el body
+            continue;
         }
         
-        // Detectar autor (**Autor:**, Autor:, @) - Regex más flexible
+        // Detectar autor (**Autor:**, Autor:, @)
         if (line.match(/^(\*\*Autor:\*\*|Autor:|@)\s*(.*)/i)) {
             if (!author) {
                 author = line.replace(/^(\*\*Autor:\*\*|Autor:|@)\s*/i, '').trim();
             }
-            continue; // Siempre saltar la línea del autor en el body
+            continue;
         }
         
-        // Detectar separadores de estrofas (líneas vacías)
-        if (line === "") {
+        // Detectar separadores de estrofas (líneas estrictamente vacías)
+        if (rawLine === "") {
             if (inLyrics && lyrics.length > 0 && lyrics[lyrics.length - 1] !== "") {
                 lyrics.push("");
             }
             continue;
         }
         
-        // Es línea de letra
-        if (line && !line.match(/^\[.*\]$/) && !line.match(/^\(.*\)$/)) {
+        // Es línea de letra (incluye diapositivas en blanco con espacios)
+        if (rawLine !== "" && !line.match(/^\[.*\]$/) && !line.match(/^\(.*\)$/)) {
             inLyrics = true;
-            lyrics.push(line);
+            lyrics.push(rawLine);
         }
     }
     
@@ -1054,8 +1341,10 @@ function parseImportedSong(content) {
     document.getElementById('songAuthor').value = author || "";
     
     if (lyrics.length > 0) {
-        // Limpiar saltos de línea sobrantes al inicio/final
-        const lyricsText = lyrics.join('\n').trim();
+        // Unir las líneas y limpiar SOLO los saltos de línea al principio/final 
+        // para no borrar las diapositivas en blanco que son solo espacios.
+        let lyricsText = lyrics.join('\n');
+        lyricsText = lyricsText.replace(/^[\n\r]+|[\n\r]+$/g, '');
         document.getElementById('lyricsInput').value = lyricsText;
     }
     

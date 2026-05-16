@@ -102,6 +102,33 @@
             pointer-events: none;
         }
 
+        .overlay-btn.project {
+            background-color: #6366f1;
+        }
+        .overlay-btn.project:hover {
+            background-color: #4f46e5;
+        }
+
+        /* Proyección */
+        #projectionModal {
+            user-select: none;
+        }
+        #projectionContent {
+            background-color: black;
+            transition: background-image 0.3s ease;
+        }
+        .projection-text {
+            width: 90%;
+            height: 80%;
+            display: flex;
+            padding: 5%;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.2;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
         /* Scrollbars */
         textarea::-webkit-scrollbar, .custom-scroll::-webkit-scrollbar { width: 8px; }
         textarea::-webkit-scrollbar-track, .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
