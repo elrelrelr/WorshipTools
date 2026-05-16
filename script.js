@@ -24,6 +24,9 @@ let repertoireList = [];
 let selectedPdfs = [];
 let dragStartIndex;
 
+// Sortable instance for slides
+let slidesSortable = null;
+
 // Estado Secciones
 let instrumentosVisible = false;
 let repertorioVisible = false;
@@ -385,37 +388,55 @@ function renderSlides() {
     });
     updateStyles();
 
-    // Inicializar Sortable para las diapositivas
-    if (container && typeof Sortable !== 'undefined' && slidesData.length > 0) {
-        new Sortable(container, {
-            animation: 150,
-            ghostClass: 'opacity-40',
-            dragClass: 'opacity-10',
-            handle: '.slide-preview',
-            delay: 200, // Retraso de 200ms para móviles (permite hacer scroll)
-            delayOnTouchOnly: true, // Solo aplicar el retraso en dispositivos táctiles
-            touchStartThreshold: 5, // Margen de movimiento antes de cancelar el arrastre
-            onEnd: function (evt) {
-                if (evt.oldIndex !== evt.newIndex) {
-                    const item = slidesData.splice(evt.oldIndex, 1)[0];
-                    slidesData.splice(evt.newIndex, 0, item);
-                    
-                    // Al reordenar manualmente, desactivamos las opciones automáticas 
-                    document.getElementById('addBlankSlide').checked = false;
-                    document.getElementById('addTitleSlide').checked = false;
-
-                    renderSlides();
-                    syncSlidesToLyrics();
-                    renderQuickCopyList();
-                }
-            }
-        });
+    // Destruir instancia anterior de Sortable si existe
+    if (slidesSortable) {
+        slidesSortable.destroy();
+        slidesSortable = null;
     }
+
+    // Inicializar Sortable para las diapositivas
+    // Reemplaza la parte de Sortable en renderSlides() con esto:
+if (container && typeof Sortable !== 'undefined' && slidesData.length > 0) {
+    // Destruir instancia anterior si existe
+    if (slidesSortable) {
+        slidesSortable.destroy();
+        slidesSortable = null;
+    }
+    
+    slidesSortable = new Sortable(container, {
+        animation: 300,
+        ghostClass: 'dragging-ghost',
+        dragClass: 'dragging-class',
+        handle: '.slide-preview',
+        delay: 0, // Sin delay para respuesta inmediata
+        delayOnTouchOnly: false,
+        touchStartThreshold: 10, // Mayor umbral para evitar scroll accidental
+        scroll: true,
+        bubbleScroll: true,
+        preventOnFilter: false,
+        onStart: function() {
+            container.style.cursor = 'grabbing';
+        },
+        onEnd: function(evt) {
+            container.style.cursor = '';
+            if (evt.oldIndex !== evt.newIndex) {
+                const item = slidesData.splice(evt.oldIndex, 1)[0];
+                slidesData.splice(evt.newIndex, 0, item);
+                
+                document.getElementById('addBlankSlide').checked = false;
+                document.getElementById('addTitleSlide').checked = false;
+                
+                renderSlides();
+                syncSlidesToLyrics();
+                renderQuickCopyList();
+            }
+        }
+    });
+}
 }
 
 // --- PROYECCIÓN (PANTALLA COMPLETA) ---
 let touchStartX = 0;
-
 function openProjection(index) {
     currentProjectionIndex = index;
     renderProjectionSlide();
@@ -424,20 +445,55 @@ function openProjection(index) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     
-    // Intentar activar Fullscreen de navegador si es posible
+    // Intentar activar Fullscreen
     if (modal.requestFullscreen) {
-        modal.requestFullscreen();
+        modal.requestFullscreen().catch(err => {
+            console.log('Fullscreen no disponible:', err);
+        });
     }
 
-    // Agregar listeners de touch para navegación por gestos (swipe)
-    modal.addEventListener('touchstart', (e) => {
+    // Agregar listeners para swipe en móviles
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    const handleTouchStart = (e) => {
         touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
+    };
+    
+    const handleTouchEnd = (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const swipeThreshold = 50;
+        if (touchStartX - touchEndX > swipeThreshold) {
+            nextProjectionSlide();
+        } else if (touchEndX - touchStartX > swipeThreshold) {
+            prevProjectionSlide();
+        }
+    };
+    
+    modal.addEventListener('touchstart', handleTouchStart, { passive: true });
+    modal.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    // Guardar referencias para limpiar después
+    modal._touchStartHandler = handleTouchStart;
+    modal._touchEndHandler = handleTouchEnd;
+}
 
-    modal.addEventListener('touchend', (e) => {
-        const touchEndX = e.changedTouches[0].screenX;
-        handleSwipe(touchStartX, touchEndX);
-    }, { passive: true });
+function closeProjection() {
+    const modal = document.getElementById('projectionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // Limpiar listeners
+    if (modal._touchStartHandler) {
+        modal.removeEventListener('touchstart', modal._touchStartHandler);
+        modal.removeEventListener('touchend', modal._touchEndHandler);
+    }
+    
+    currentProjectionIndex = -1;
+    
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    }
 }
 
 function renderProjectionSlide() {
@@ -452,51 +508,104 @@ function renderProjectionSlide() {
     let color = document.getElementById('textColor').value;
     const shadow = document.getElementById('textShadow').checked;
     const isBold = document.getElementById('textBold').checked;
-    const size = document.getElementById('fontSize').value;
+    const size = parseInt(document.getElementById('fontSize').value) || 55;
     const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
+    const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
 
+    // Limpiar contenido anterior
     content.innerHTML = '';
+    content.style.backgroundSize = 'cover';
+    content.style.backgroundPosition = 'center';
+    content.style.backgroundRepeat = 'no-repeat';
     
-    // Configurar Fondo y Color de Seguridad
+    // Configurar Fondo
     if (bgImageData) {
         if (transparency) {
-            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url(${bgImageData})`;
+            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
         } else {
             content.style.backgroundImage = `url(${bgImageData})`;
         }
-        content.style.backgroundSize = 'cover';
-        content.style.backgroundPosition = 'center';
-        content.style.backgroundColor = 'black';
-    } else {
-        // SI NO HAY FONDO: Usar blanco para que el texto negro sea visible
-        content.style.backgroundColor = 'white';
-        content.style.backgroundImage = 'none';
-        // Si el color de texto es muy claro (ej. blanco por defecto) y no hay fondo, 
-        // lo forzamos a negro para que se vea sobre el fondo blanco.
-        if (color.toUpperCase() === '#FFFFFF' || color.toUpperCase() === '#FFFFF1') {
-            color = '#000000';
+        content.style.backgroundColor = 'transparent';
+        
+        // CORRECCIÓN: Asegurar que el texto sea visible sobre imágenes oscuras
+        // Si el color de texto es muy claro pero hay imagen oscura, mantenerlo
+        // Si es muy oscuro, ajustar automáticamente
+        if (color.toUpperCase() === '#000000' && !transparency) {
+            color = '#FFFFFF'; // Texto blanco sobre imagen sin transparencia
         }
+    } else {
+        // SIN FONDO: usar blanco y texto negro
+        content.style.backgroundColor = '#FFFFFF';
+        content.style.backgroundImage = 'none';
+        color = '#000000'; // Forzar texto negro
     }
 
+    // Crear contenedor de texto
     const textDiv = document.createElement('div');
     textDiv.className = 'projection-text';
     textDiv.innerText = slideText;
     
-    // Aplicar estilos
+    // Aplicar estilos al texto
     textDiv.style.fontFamily = font;
     textDiv.style.color = color;
     textDiv.style.textAlign = currentAlignment;
-    textDiv.style.justifyContent = 'center';
-    textDiv.style.alignItems = vAlignMap[currentVerticalAlignment];
-    
-    // Escalar tamaño
-    const scaleFactor = window.innerHeight / 500; 
-    textDiv.style.fontSize = `${parseInt(size) * scaleFactor}px`;
-    
     textDiv.style.fontWeight = isBold ? 'bold' : 'normal';
-    textDiv.style.textShadow = shadow ? '4px 4px 8px rgba(0,0,0,0.9)' : 'none';
-
+    textDiv.style.textShadow = shadow ? '3px 3px 6px rgba(0,0,0,0.8)' : 'none';
+    
+    // CORRECCIÓN: Mejor cálculo del tamaño de fuente responsivo
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    let baseFontSize = size;
+    
+    // Escalar basado en el tamaño de la pantalla (más preciso)
+    if (windowWidth < 768) {
+        baseFontSize = Math.max(24, size * 0.6);
+    } else if (windowWidth < 1024) {
+        baseFontSize = Math.max(32, size * 0.8);
+    } else {
+        baseFontSize = size;
+    }
+    
+    // Ajustar aún más basado en la altura de la pantalla
+    const scaleByHeight = windowHeight / 768;
+    let finalFontSize = Math.min(baseFontSize * scaleByHeight, size * 1.2);
+    finalFontSize = Math.max(24, Math.min(120, finalFontSize));
+    
+    textDiv.style.fontSize = `${finalFontSize}px`;
+    
+    // Configurar alineación vertical y horizontal
+    textDiv.style.display = 'flex';
+    textDiv.style.flexDirection = 'column';
+    textDiv.style.justifyContent = vAlignMap[currentVerticalAlignment];
+    textDiv.style.alignItems = hAlignMap[currentAlignment];
+    textDiv.style.width = '85%';
+    textDiv.style.height = '85%';
+    textDiv.style.padding = '5%';
+    textDiv.style.margin = '0';
+    textDiv.style.lineHeight = '1.3';
+    textDiv.style.whiteSpace = 'pre-wrap';
+    textDiv.style.wordBreak = 'break-word';
+    textDiv.style.boxSizing = 'border-box';
+    
+    // Asegurar que el texto no se desborde
+    textDiv.style.overflow = 'auto';
+    textDiv.style.maxHeight = '100%';
+    
     content.appendChild(textDiv);
+    
+    // Agregar indicador de página (opcional)
+    const pageIndicator = document.createElement('div');
+    pageIndicator.style.position = 'absolute';
+    pageIndicator.style.bottom = '20px';
+    pageIndicator.style.right = '20px';
+    pageIndicator.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    pageIndicator.style.color = 'white';
+    pageIndicator.style.padding = '5px 10px';
+    pageIndicator.style.borderRadius = '20px';
+    pageIndicator.style.fontSize = '12px';
+    pageIndicator.style.fontFamily = 'monospace';
+    pageIndicator.innerText = `${currentProjectionIndex + 1} / ${slidesData.length}`;
+    content.appendChild(pageIndicator);
 }
 
 function nextProjectionSlide() {
@@ -545,11 +654,13 @@ document.addEventListener('keydown', (e) => {
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'Backspace' || e.key === 'PageUp') {
             e.preventDefault();
             prevProjectionSlide();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeProjection();
         }
     }
 
     if (e.key === 'Escape') {
-        closeProjection();
         closeEditModal();
         closeGallery();
         if (!document.getElementById('quickCopyPanel').classList.contains('translate-x-full')) {
@@ -968,7 +1079,7 @@ function loadFromRepertoire(index) {
     processLyrics();
     
     // Hacer scroll al editor
-    scrollToSection('editorArea');
+    scrollToSection('diapositivas');
 }
 
 function escapeHtml(str) {
@@ -1018,18 +1129,15 @@ async function downloadSetlist() {
 
         for (const song of repertoireList) {
             const st = song.styles;
-
-            let fontName = "Cambria";
-            if (st.font.includes('Arial')) fontName = "Arial";
-            else if (st.font.includes('Times')) fontName = "Times New Roman";
-            else if (st.font.includes('Impact')) fontName = "Impact";
-            else if (st.font.includes('Verdana')) fontName = "Verdana";
+            
+            // CORRECCIÓN: Usar la función auxiliar para obtener el nombre de la fuente
+            let fontName = getFontFamilyName(st.font);
 
             const alignMap = { 'left': 'left', 'center': 'center', 'right': 'right' };
             const vAlignMap = { 'top': 'top', 'center': 'middle', 'bottom': 'bottom' };
             const shadowOpts = st.shadow ? { type: 'outer', angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
 
-            // 1. DIAPOSITIVA EN BLANCO (siempre al inicio de cada canción)
+            // DIAPOSITIVA EN BLANCO (siempre al inicio de cada canción)
             let blankSlide = pptx.addSlide();
             if (st.bgImage) {
                 blankSlide.background = { data: st.bgImage };
@@ -1037,7 +1145,7 @@ async function downloadSetlist() {
                 blankSlide.background = { color: "FFFFFF" };
             }
 
-            // 2. RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
+            // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
             for (let i = 0; i < song.slides.length; i++) {
                 let text = song.slides[i].trim() || " ";
                 
@@ -1081,7 +1189,16 @@ async function downloadSetlist() {
     }
 }
 
-// --- MOTOR PPTX NATIVO (SINGLE EXPORT) ---
+//pon esto en el lugar correcto
+function getFontFamilyName(fontValue) {
+    if (fontValue.includes('Arial')) return "Arial";
+    if (fontValue.includes('Times')) return "Times New Roman";
+    if (fontValue.includes('Impact')) return "Impact";
+    if (fontValue.includes('Verdana')) return "Verdana";
+    return "Cambria"; // Default
+}
+
+// --- PPTX ---
 async function downloadPPTX() {
     if (slidesData.length === 0) return alert("No hay diapositivas para exportar.");
 
@@ -1097,10 +1214,8 @@ async function downloadPPTX() {
         pptx.layout = 'WIDE';
 
         const fontSelect = document.getElementById('fontFamily').value;
-        const fontName = fontSelect.includes('Cambria') ? "Cambria" :
-            fontSelect.includes('Arial') ? "Arial" :
-                fontSelect.includes('Times') ? "Times New Roman" :
-                    fontSelect.includes('Impact') ? "Impact" : "Verdana";
+        // CORRECCIÓN: Usar la función auxiliar
+        const fontName = getFontFamilyName(fontSelect);
 
         const fontSize = parseInt(document.getElementById('fontSize').value) || 60;
         const fontColor = document.getElementById('textColor').value.replace('#', '');
@@ -1116,7 +1231,6 @@ async function downloadPPTX() {
 
             if (bgImageData) {
                 slide.background = { data: bgImageData };
-                // Capa Tenue si está activo
                 if (document.getElementById('bgTransparency').checked) {
                     slide.addShape(pptx.ShapeType.rect, {
                         x: 0, y: 0, w: '100%', h: '100%',

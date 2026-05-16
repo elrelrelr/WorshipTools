@@ -313,4 +313,37 @@
         .Limpiar-todo {
             color: #7fffd4;
         }
-      
+      /* Mejoras para Drag & Drop en móviles */
+.dragging-ghost {
+    opacity: 0.4;
+    background-color: #3b82f6 !important;
+    transform: scale(0.98);
+    transition: all 0.2s ease;
+}
+
+.dragging-class {
+    opacity: 0.6;
+    cursor: grabbing !important;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+}
+
+.slide-preview {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.slide-preview:active {
+    cursor: grabbing;
+}
+
+/* Indicador visual para touch */
+@media (max-width: 768px) {
+    .slide-preview {
+        cursor: default;
+    }
+    
+    .slide-preview:active {
+        transform: scale(0.99);
+    }
+}
