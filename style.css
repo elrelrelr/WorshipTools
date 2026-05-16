@@ -81,11 +81,14 @@
             position: absolute;
             inset: 0;
             display: flex;
-            padding: 2%; /* Margen interno para evitar bordes */
+            flex-direction: column;
+            padding: 5%;
             white-space: pre-wrap;
             word-break: break-word;
             line-height: 1.2;
             z-index: 10;
+            pointer-events: none;
+            box-sizing: border-box;
         }
 
         .slide-number {

@@ -170,7 +170,12 @@
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-xs font-bold text-slate-400 uppercase">Letra Completa</label>
-                            <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo" onclick="clearSlides()">Limpiar Todo</span>
+                            <div class="flex gap-3">
+                                <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold" onclick="formatLyricsWithRules()">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Dar Formato
+                                </span>
+                                <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo" onclick="clearSlides()">Limpiar Todo</span>
+                            </div>
                         </div>
                         <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
                             class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors text-base"></textarea>
@@ -271,7 +276,7 @@
                         <!-- Configuración de Corte (DEFAULT 2) -->
                         <div>
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Líneas por diapositiva: <span id="linesVal" class="text-white">2</span></span>
-                            <input type="range" id="linesPerSlide" min="2" max="8" value="2" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; processLyrics()">
+                            <input type="range" id="linesPerSlide" min="1" max="8" value="2" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; processLyrics()">
                         </div>
                     </div>
 

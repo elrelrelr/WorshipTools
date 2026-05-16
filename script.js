@@ -234,33 +234,70 @@ function processLyrics() {
     if (addTitle) {
         const name = toTitleCase(document.getElementById('songName').value || "Título");
         const auth = toTitleCase(document.getElementById('songAuthor').value || "");
-        slidesData.push(`${name}\n${auth}`);
+        slidesData.push(auth ? `${name}\n${auth}` : name);
     }
     
     if (text.length > 0) {
-        const lines = text.split('\n');
+        // SOLUCIÓN: Ignorar líneas totalmente vacías al procesar para que el Slider 
+        // mande SIEMPRE sobre la estructura del texto, incluso si hay dobles saltos.
+        // Pero preservamos las líneas que tienen espacios (diapositivas en blanco manuales).
+        const lines = text.split('\n').map(l => l.trim() === "" ? (l === "" ? "" : " ") : l.trim());
+        
         let chunk = [];
         for (let line of lines) {
-            // Una línea es un separador SOLO si está TOTALMENTE VACÍA
-            if (line === "") {
-                if (chunk.length > 0) { 
-                    slidesData.push(chunk.join('\n')); 
-                    chunk = []; 
-                }
-            } else {
-                const cleanLine = line.trim() || " "; 
-                chunk.push(cleanLine);
-                
-                if (chunk.length >= maxLines) { 
-                    slidesData.push(chunk.join('\n')); 
-                    chunk = []; 
-                }
+            // Saltamos las líneas totalmente vacías (separadores visuales)
+            if (line === "") continue;
+
+            // Es contenido (letra o espacio intencional)
+            chunk.push(line);
+            
+            if (chunk.length >= maxLines) { 
+                slidesData.push(chunk.join('\n')); 
+                chunk = []; 
             }
         }
         if (chunk.length > 0) slidesData.push(chunk.join('\n'));
     }
     renderSlides();
     renderQuickCopyList();
+}
+
+// NUEVA FUNCIÓN: Dar Formato al área de texto para que el usuario vea los cortes reales
+function formatLyricsWithRules() {
+    const rawText = document.getElementById('lyricsInput').value;
+    if (!rawText.trim()) return;
+
+    // Normalizar
+    const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 2;
+    
+    // Primero, limpiar todos los saltos de línea dobles existentes para re-procesar "limpio"
+    // Solo dejamos un salto de línea por verso
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
+    
+    let formattedSlides = [];
+    let chunk = [];
+    
+    for (let line of lines) {
+        chunk.push(line);
+        if (chunk.length >= maxLines) {
+            formattedSlides.push(chunk.join('\n'));
+            chunk = [];
+        }
+    }
+    if (chunk.length > 0) formattedSlides.push(chunk.join('\n'));
+    
+    // Unir con doble salto de línea para que se vea claro el corte en el textarea
+    document.getElementById('lyricsInput').value = formattedSlides.join('\n\n');
+    
+    // Procesar para actualizar vista previa
+    processLyrics();
+    
+    // Notificación visual rápida
+    const btn = document.querySelector('span[onclick="formatLyricsWithRules()"]');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = `<i class="fa-solid fa-check"></i> Formateado`;
+    setTimeout(() => btn.innerHTML = originalHTML, 1500);
 }
 
 function clearSlides() {
@@ -354,14 +391,16 @@ function renderSlides() {
             animation: 150,
             ghostClass: 'opacity-40',
             dragClass: 'opacity-10',
-            handle: '.slide-preview', // Se puede arrastrar desde cualquier parte de la diapositiva
+            handle: '.slide-preview',
+            delay: 200, // Retraso de 200ms para móviles (permite hacer scroll)
+            delayOnTouchOnly: true, // Solo aplicar el retraso en dispositivos táctiles
+            touchStartThreshold: 5, // Margen de movimiento antes de cancelar el arrastre
             onEnd: function (evt) {
                 if (evt.oldIndex !== evt.newIndex) {
                     const item = slidesData.splice(evt.oldIndex, 1)[0];
                     slidesData.splice(evt.newIndex, 0, item);
                     
                     // Al reordenar manualmente, desactivamos las opciones automáticas 
-                    // para que el textarea refleje exactamente el nuevo orden y no se dupliquen al procesar
                     document.getElementById('addBlankSlide').checked = false;
                     document.getElementById('addTitleSlide').checked = false;
 
@@ -410,7 +449,7 @@ function renderProjectionSlide() {
 
     // Estilos actuales
     const font = document.getElementById('fontFamily').value;
-    const color = document.getElementById('textColor').value;
+    let color = document.getElementById('textColor').value;
     const shadow = document.getElementById('textShadow').checked;
     const isBold = document.getElementById('textBold').checked;
     const size = document.getElementById('fontSize').value;
@@ -418,19 +457,25 @@ function renderProjectionSlide() {
 
     content.innerHTML = '';
     
-    // Configurar Fondo
+    // Configurar Fondo y Color de Seguridad
     if (bgImageData) {
         if (transparency) {
-            // Efecto 'Tenue': difumina la imagen hacia negro para la proyección
             content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url(${bgImageData})`;
         } else {
             content.style.backgroundImage = `url(${bgImageData})`;
         }
         content.style.backgroundSize = 'cover';
         content.style.backgroundPosition = 'center';
-    } else {
         content.style.backgroundColor = 'black';
+    } else {
+        // SI NO HAY FONDO: Usar blanco para que el texto negro sea visible
+        content.style.backgroundColor = 'white';
         content.style.backgroundImage = 'none';
+        // Si el color de texto es muy claro (ej. blanco por defecto) y no hay fondo, 
+        // lo forzamos a negro para que se vea sobre el fondo blanco.
+        if (color.toUpperCase() === '#FFFFFF' || color.toUpperCase() === '#FFFFF1') {
+            color = '#000000';
+        }
     }
 
     const textDiv = document.createElement('div');
@@ -574,7 +619,10 @@ function updateStyles() {
 
     const realSize = parseInt(document.getElementById('fontSize').value);
     const previewSize = Math.max(10, realSize * 0.25);
+    
+    // Mapeo para Flexbox (con flex-direction: column)
     const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
+    const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
 
     const btnBg = 'bg-slate-700';
     document.getElementById('btnAlignLeft').classList.remove(btnBg);
@@ -594,7 +642,6 @@ function updateStyles() {
     document.querySelectorAll('.slide-preview').forEach(slide => {
         const transparency = document.getElementById('bgTransparency').checked;
         if (bgImageData) {
-            // Efecto 'Tenue': difumina la imagen hacia el color de fondo (blanco en la vista previa)
             if (transparency) {
                 slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
             } else {
@@ -611,8 +658,11 @@ function updateStyles() {
             content.style.fontFamily = font;
             content.style.color = color;
             content.style.textAlign = currentAlignment;
-            content.style.justifyContent = 'center';
-            content.style.alignItems = vAlignMap[currentVerticalAlignment];
+            // Alineación Vertical con justify-content (en column)
+            content.style.justifyContent = vAlignMap[currentVerticalAlignment];
+            // Alineación Horizontal con align-items (en column)
+            content.style.alignItems = hAlignMap[currentAlignment];
+            
             content.style.fontSize = `${previewSize}px`;
             content.style.fontWeight = isBold ? 'bold' : 'normal';
             content.style.textShadow = shadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none';
@@ -986,21 +1036,19 @@ async function downloadSetlist() {
             } else {
                 blankSlide.background = { color: "FFFFFF" };
             }
-            // Sin texto - solo fondo
 
             // 2. RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
             for (let i = 0; i < song.slides.length; i++) {
-                let text = song.slides[i].trim();
+                let text = song.slides[i].trim() || " ";
                 
                 let slide = pptx.addSlide();
                 
                 if (st.bgImage) {
                     slide.background = { data: st.bgImage };
-                    // Efecto 'Tenue' en PowerPoint: rectángulo blanco muy transparente para "aclarar" la imagen
                     if (st.bgTransparency) {
                         slide.addShape(pptx.ShapeType.rect, {
                             x: 0, y: 0, w: '100%', h: '100%',
-                            fill: { color: 'FFFFFF', transparency: 20 } // 20% transparencia = 80% blanco (faded)
+                            fill: { color: 'FFFFFF', transparency: 20 }
                         });
                     }
                 } else {
@@ -1063,7 +1111,7 @@ async function downloadPPTX() {
         const shadowOpts = shadow ? { type: 'outer', angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
 
         for (let rawText of slidesData) {
-            let text = rawText.trim();
+            let text = rawText.trim() || " ";
             let slide = pptx.addSlide();
 
             if (bgImageData) {
@@ -1072,7 +1120,7 @@ async function downloadPPTX() {
                 if (document.getElementById('bgTransparency').checked) {
                     slide.addShape(pptx.ShapeType.rect, {
                         x: 0, y: 0, w: '100%', h: '100%',
-                        fill: { color: '000000', transparency: 50 }
+                        fill: { color: 'FFFFFF', transparency: 20 }
                     });
                 }
             } else {
@@ -1107,6 +1155,7 @@ async function downloadPPTX() {
         btn.disabled = false;
     }
 }
+
 
 // --- EXPORTACIÓN PDF ---
 async function exportToPDF() {
@@ -1274,7 +1323,9 @@ function importSongFromFile() {
 }
 
 function parseImportedSong(content) {
-    const lines = content.split('\n');
+    // Normalización inicial de saltos de línea
+    const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedContent.split('\n');
     
     let title = "";
     let author = "";
@@ -1284,83 +1335,59 @@ function parseImportedSong(content) {
     let inYaml = false;
     
     for (let i = 0; i < lines.length; i++) {
-        let rawLine = lines[i]; // No hacemos trim() aquí para no perder los espacios de diapositivas en blanco
+        let rawLine = lines[i];
         let line = rawLine.trim();
         
-        // Detectar inicio/fin de YAML Front Matter
+        // YAML Front Matter
         if (line === "---") {
-            if (i === 0 && !inYaml) {
-                inYaml = true;
-                continue;
-            } else if (inYaml) {
-                inYaml = false;
-                continue;
-            }
+            if (i === 0 && !inYaml) { inYaml = true; continue; } 
+            else if (inYaml) { inYaml = false; continue; }
         }
         
         if (inYaml) {
-            if (line.startsWith('title:')) title = line.replace('title:', '').trim();
-            if (line.startsWith('author:')) author = line.replace('author:', '').trim();
-            if (line.startsWith('background:')) background = line.replace('background:', '').trim();
+            if (line.toLowerCase().startsWith('title:')) title = line.substring(6).trim();
+            if (line.toLowerCase().startsWith('author:')) author = line.substring(7).trim();
+            if (line.toLowerCase().startsWith('background:')) background = line.substring(11).trim();
             continue;
         }
         
-        // Detectar título (# Título) fuera de YAML
+        // Detectar metadatos en el cuerpo (Markdown)
         if (line.match(/^#+\s*(.*)/)) {
-            if (!title) {
-                title = line.replace(/^#+\s*/, '').trim();
-            }
+            if (!title) title = line.replace(/^#+\s*/, '').trim();
             continue;
         }
-        
-        // Detectar autor (**Autor:**, Autor:, @)
         if (line.match(/^(\*\*Autor:\*\*|Autor:|@)\s*(.*)/i)) {
-            if (!author) {
-                author = line.replace(/^(\*\*Autor:\*\*|Autor:|@)\s*/i, '').trim();
-            }
+            if (!author) author = line.replace(/^(\*\*Autor:\*\*|Autor:|@)\s*/i, '').trim();
             continue;
         }
         
-        // Detectar separadores de estrofas (líneas estrictamente vacías)
-        if (rawLine === "") {
-            if (inLyrics && lyrics.length > 0 && lyrics[lyrics.length - 1] !== "") {
-                lyrics.push("");
-            }
-            continue;
-        }
-        
-        // Es línea de letra (incluye diapositivas en blanco con espacios)
-        if (rawLine !== "" && !line.match(/^\[.*\]$/) && !line.match(/^\(.*\)$/)) {
+        // Capturar letra
+        if (inLyrics || (line !== "" && !line.match(/^\[.*\]$/))) {
             inLyrics = true;
+            // No hacemos trim() aquí para preservar diapositivas en blanco (espacios)
             lyrics.push(rawLine);
         }
     }
     
+    // Limpiar metadatos del cuerpo si se colaron en lyrics
+    const cleanLyrics = lyrics.filter(l => {
+        const t = l.trim();
+        if (t === "" || t === " ") return true;
+        if (t === `# ${title}` || t.includes(`**Autor:** ${author}`)) return false;
+        return true;
+    });
+
     // Cargar al editor
     document.getElementById('songName').value = title || "";
     document.getElementById('songAuthor').value = author || "";
+    document.getElementById('lyricsInput').value = cleanLyrics.join('\n').replace(/^[\n]+|[\n]+$/g, '');
     
-    if (lyrics.length > 0) {
-        // Unir las líneas y limpiar SOLO los saltos de línea al principio/final 
-        // para no borrar las diapositivas en blanco que son solo espacios.
-        let lyricsText = lyrics.join('\n');
-        lyricsText = lyricsText.replace(/^[\n\r]+|[\n\r]+$/g, '');
-        document.getElementById('lyricsInput').value = lyricsText;
-    }
+    if (background && background !== "null") bgImageData = background;
+    else bgImageData = null;
     
-    // Cargar Fondo si existe
-    if (background && background !== "null") {
-        bgImageData = background;
-    } else {
-        bgImageData = null;
-    }
-    
-    // Actualizar vista
     updateStyles();
-    generateTag();
     processLyrics();
-    
-    alert(`Canción "${title || 'Importada'}" cargada correctamente.`);
+    alert(`Canción "${title || 'Importada'}" cargada.`);
 }
 
 // También permitir importar canciones guardadas previamente (exportar como .md)
