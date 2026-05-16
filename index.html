@@ -171,8 +171,8 @@
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-xs font-bold text-slate-400 uppercase">Letra Completa</label>
                             <div class="flex gap-3">
-                                <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold" onclick="formatLyricsWithRules()">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Dar Formato
+                                <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold" onclick="cleanAndCorrectLyrics()">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Corregir Texto
                                 </span>
                                 <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo" onclick="clearSlides()">Limpiar Todo</span>
                             </div>
@@ -180,17 +180,18 @@
                         <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
                             class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors text-base"></textarea>
                         
-                        <div class="flex flex-wrap gap-4 mt-2 mb-3">
-                             <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-                                <input type="checkbox" id="addBlankSlide" checked class="accent-blue-500"> +Slide Vacío
-                            </label>
-                            <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-                                <input type="checkbox" id="addTitleSlide" checked class="accent-blue-500"> +Portada
-                            </label>
-                            <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
-                                <input type="checkbox" id="bgTransparency" onchange="updateStyles()" class="accent-blue-500"> Imagen Tenue
-                            </label>
-                        </div>
+                        
+<div class="flex flex-wrap gap-4 mt-2 mb-3 chulos">
+    <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+        <input type="checkbox" id="addBlankSlide" onchange="updateSlidesRealTime()" class="accent-blue-500"> +Slide Vacío
+    </label>
+    <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+        <input type="checkbox" id="addTitleSlide" onchange="updateSlidesRealTime()" class="accent-blue-500"> +Portada
+    </label>
+    <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+        <input type="checkbox" id="bgTransparency" onchange="updateStyles()" class="accent-blue-500"> Imagen Tenue
+    </label>
+</div>
 
                         <button onclick="processLyrics()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-base min-h-[44px]">
                             <i class="fa-solid fa-arrows-rotate"></i> Procesar Diapositivas
@@ -276,7 +277,9 @@
                         <!-- Configuración de Corte (DEFAULT 2) -->
                         <div>
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Líneas por diapositiva: <span id="linesVal" class="text-white">2</span></span>
-                            <input type="range" id="linesPerSlide" min="1" max="8" value="2" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; processLyrics()">
+                            <!-- Línea original (aproximadamente línea 214) -->
+<input type="range" id="linesPerSlide" min="1" max="8" value="2" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; refreshSlidesFromCurrentState()">
+                           
                         </div>
                     </div>
 

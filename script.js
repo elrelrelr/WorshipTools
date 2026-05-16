@@ -154,6 +154,16 @@ function toTitleCase(str) {
 function generateTag() {
     let name = document.getElementById('songName').value.trim();
     let author = document.getElementById('songAuthor').value.trim();
+    
+    // Limpiar cualquier etiqueta que pueda haber sido pegada accidentalmente
+    if (name.startsWith('#')) {
+        // Extraer solo el nombre de la canción de la etiqueta
+        const tagMatch = name.match(/^#([^(]+)/);
+        if (tagMatch) {
+            name = tagMatch[1].trim();
+        }
+    }
+    
     const cleanName = name ? toTitleCase(name) : "";
     const cleanAuthor = author ? toTitleCase(author) : "";
 
@@ -161,11 +171,16 @@ function generateTag() {
         const hash = cleanName.replace(/\s+/g, '');
         let initials = "";
         if (cleanAuthor) {
-            cleanAuthor.split(/\s+/).forEach(w => {
-                if (w.length > 0 && /[a-zA-Z]/.test(w[0])) initials += w[0].toUpperCase();
-            });
-        } else { initials = "?"; }
-        generatedTagString = `#${hash} (${cleanAuthor}) (${initials})`;
+            const words = cleanAuthor.split(/\s+/);
+            for (let w of words) {
+                if (w.length > 0 && /[a-zA-Z]/.test(w[0])) {
+                    initials += w[0].toUpperCase();
+                }
+            }
+        } else {
+            initials = "?";
+        }
+        generatedTagString = `#${hash} (${cleanAuthor || "?"}) (${initials})`;
     } else {
         generatedTagString = "";
     }
@@ -224,82 +239,159 @@ function searchExternal(type) {
 // --- PROCESAMIENTO DE SLIDES ---
 function processLyrics() {
     generateTag();
+    refreshSlidesFromCurrentState();
+}
+// Función para actualizar la vista previa en tiempo real cuando cambian los checkboxes
+function updateSlidesRealTime() {
     const rawText = document.getElementById('lyricsInput').value;
-    // Normalizar saltos de línea y limpiar espacios raros
+    if (!rawText.trim() && !document.getElementById('addBlankSlide').checked && !document.getElementById('addTitleSlide').checked) {
+        // Si no hay letra y ambos checkboxes están desactivados, mostrar vacío
+        slidesData = [];
+        renderSlides();
+        renderQuickCopyList();
+        return;
+    }
+    
+    // Llamar a la función que actualiza las diapositivas (sin regenerar desde el texto si no es necesario)
+    refreshSlidesFromCurrentState();
+}
+
+// Función que refresca las diapositivas manteniendo la letra actual
+// --- ACTUALIZACIÓN EN TIEMPO REAL PARA CHECKBOXES ---
+function refreshSlidesFromCurrentState() {
+    const rawText = document.getElementById('lyricsInput').value;
     const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
     const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 2;
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
-
-    slidesData = [];
-    if (addBlank) slidesData.push(" ");
+    
+    const songName = toTitleCase(document.getElementById('songName').value || "Título");
+    const songAuthor = toTitleCase(document.getElementById('songAuthor').value || "");
+    
+    let newSlidesData = [];
+    
+    if (addBlank) newSlidesData.push(" ");
     if (addTitle) {
-        const name = toTitleCase(document.getElementById('songName').value || "Título");
-        const auth = toTitleCase(document.getElementById('songAuthor').value || "");
-        slidesData.push(auth ? `${name}\n${auth}` : name);
+        const titleText = songAuthor ? `${songName}\n${songAuthor}` : songName;
+        newSlidesData.push(titleText);
     }
     
-    if (text.length > 0) {
-        // SOLUCIÓN: Ignorar líneas totalmente vacías al procesar para que el Slider 
-        // mande SIEMPRE sobre la estructura del texto, incluso si hay dobles saltos.
-        // Pero preservamos las líneas que tienen espacios (diapositivas en blanco manuales).
-        const lines = text.split('\n').map(l => l.trim() === "" ? (l === "" ? "" : " ") : l.trim());
+    if (text.trim().length > 0) {
+        const lines = text.split('\n').map(l => l.trim() === "" ? null : l.trim()).filter(l => l !== null);
         
         let chunk = [];
         for (let line of lines) {
-            // Saltamos las líneas totalmente vacías (separadores visuales)
-            if (line === "") continue;
-
-            // Es contenido (letra o espacio intencional)
             chunk.push(line);
-            
-            if (chunk.length >= maxLines) { 
-                slidesData.push(chunk.join('\n')); 
-                chunk = []; 
+            if (chunk.length >= maxLines) {
+                newSlidesData.push(chunk.join('\n'));
+                chunk = [];
             }
         }
-        if (chunk.length > 0) slidesData.push(chunk.join('\n'));
+        if (chunk.length > 0) newSlidesData.push(chunk.join('\n'));
     }
+    
+    slidesData = newSlidesData;
     renderSlides();
     renderQuickCopyList();
 }
 
-// NUEVA FUNCIÓN: Dar Formato al área de texto para que el usuario vea los cortes reales
-function formatLyricsWithRules() {
+
+
+
+
+
+function updateSlidesRealTime() {
+    // Si no hay letra y ambos checkboxes están desactivados, mostrar vacío
     const rawText = document.getElementById('lyricsInput').value;
+    if (!rawText.trim() && !document.getElementById('addBlankSlide').checked && !document.getElementById('addTitleSlide').checked) {
+        slidesData = [];
+        renderSlides();
+        renderQuickCopyList();
+        return;
+    }
+    
+    refreshSlidesFromCurrentState();
+}
+
+// MODIFICAR processLyrics para usar la nueva función
+function processLyrics() {
+    generateTag();
+    refreshSlidesFromCurrentState();
+}
+
+// NUEVA FUNCIÓN: Corrige ortografía, capitalización y evita duplicados con la portada
+function cleanAndCorrectLyrics() {
+    let rawText = document.getElementById('lyricsInput').value;
     if (!rawText.trim()) return;
 
-    // Normalizar
-    const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 2;
-    
-    // Primero, limpiar todos los saltos de línea dobles existentes para re-procesar "limpio"
-    // Solo dejamos un salto de línea por verso
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l !== "");
-    
-    let formattedSlides = [];
-    let chunk = [];
-    
-    for (let line of lines) {
-        chunk.push(line);
-        if (chunk.length >= maxLines) {
-            formattedSlides.push(chunk.join('\n'));
-            chunk = [];
-        }
-    }
-    if (chunk.length > 0) formattedSlides.push(chunk.join('\n'));
-    
-    // Unir con doble salto de línea para que se vea claro el corte en el textarea
-    document.getElementById('lyricsInput').value = formattedSlides.join('\n\n');
+    const songName = document.getElementById('songName').value.trim().toLowerCase();
+    const songAuthor = document.getElementById('songAuthor').value.trim().toLowerCase();
+
+    // 1. Normalizar saltos de línea
+    let lines = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+    // 2. Eliminar líneas que sean idénticas al título o autor (evitar duplicados en portada)
+    lines = lines.filter(line => {
+        const l = line.trim().toLowerCase();
+        if (!l) return true; // Mantener líneas vacías para separación
+        
+        // Quitar si coincide con título o autor o combinación común
+        if (songName && l === songName) return false;
+        if (songAuthor && l === songAuthor) return false;
+        if (songName && songAuthor && (l === `${songName} - ${songAuthor}` || l === `${songName} ${songAuthor}`)) return false;
+        
+        // Quitar etiquetas de metadatos comunes que vienen al pegar de webs de letras
+        if (l.startsWith('título:') || l.startsWith('artista:') || l.startsWith('autor:')) return false;
+        
+        return true;
+    });
+
+    // 3. Limpieza de cada línea
+    lines = lines.map(line => {
+        let l = line.trim();
+        if (!l) return "";
+
+        // Capitalizar primera letra de la línea
+        l = l.charAt(0).toUpperCase() + l.slice(1);
+
+        // Eliminar puntuación final innecesaria para diapositivas
+        l = l.replace(/[,.;]$/, "");
+
+        // Correcciones ortográficas comunes en español de alabanza
+        const corrections = [
+            { bad: /\bEspiritu\b/gi, good: "Espíritu" },
+            { bad: /\bJesus\b/gi, good: "Jesús" },
+            { bad: /\bAmen\b/gi, good: "Amén" },
+            { bad: /\bCorazon\b/gi, good: "Corazón" },
+            { bad: /\bBendicion\b/gi, good: "Bendición" },
+            { bad: /\bOracion\b/gi, good: "Oración" },
+            { bad: /\bAdoracion\b/gi, good: "Adoración" },
+            { bad: /\bDíos\b/gi, good: "Dios" }, // Error común ponerle tilde a Dios
+            { bad: /\bCanci[oó]n\b/gi, good: "Canción" },
+            { bad: /\bTi\b/gi, good: "ti" }, // "ti" nunca lleva tilde (error común)
+            { bad: /\bS[oó]lo\b/gi, good: "Solo" } // RAE recomienda sin tilde
+        ];
+
+        corrections.forEach(c => {
+            l = l.replace(c.bad, c.good);
+        });
+        
+        return l;
+    });
+
+    // 4. Unir y limpiar saltos de línea excesivos
+    let cleanedText = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+
+    document.getElementById('lyricsInput').value = cleanedText;
     
     // Procesar para actualizar vista previa
     processLyrics();
     
     // Notificación visual rápida
-    const btn = document.querySelector('span[onclick="formatLyricsWithRules()"]');
+    const btn = document.querySelector('span[onclick="cleanAndCorrectLyrics()"]');
     const originalHTML = btn.innerHTML;
-    btn.innerHTML = `<i class="fa-solid fa-check"></i> Formateado`;
+    btn.innerHTML = `<i class="fa-solid fa-check"></i> ¡Corregido!`;
     setTimeout(() => btn.innerHTML = originalHTML, 1500);
 }
 
@@ -316,8 +408,11 @@ function clearSlides() {
     generatedTagString = "";
     
     // Resetear opciones automáticas para un inicio limpio
-    document.getElementById('addBlankSlide').checked = true;
-    document.getElementById('addTitleSlide').checked = true;
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
+    
+    // NO resetear bgImageData, currentAlignment, etc. para mantener consistencia
+    // bgImageData = null;  // <-- COMENTADO para no perder fondo accidentalmente
     
     renderSlides();
     renderQuickCopyList();
@@ -359,8 +454,8 @@ function renderSlides() {
         const btnAdd = document.createElement('button');
         btnAdd.className = 'overlay-btn add';
         btnAdd.innerHTML = '<i class="fa-solid fa-plus"></i>';
-        btnAdd.title = "Agregar Diapositiva en Blanco Después";
-        btnAdd.onclick = (e) => { e.stopPropagation(); addBlankSlideAfter(i); };
+        btnAdd.title = "Agregar Diapositiva en Blanco Antes";
+        btnAdd.onclick = (e) => { e.stopPropagation(); addBlankSlideBefore(i); };
 
         // Botón Eliminar
         const btnDel = document.createElement('button');
@@ -521,23 +616,15 @@ function renderProjectionSlide() {
     // Configurar Fondo
     if (bgImageData) {
         if (transparency) {
-            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
+            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
         } else {
             content.style.backgroundImage = `url(${bgImageData})`;
         }
         content.style.backgroundColor = 'transparent';
-        
-        // CORRECCIÓN: Asegurar que el texto sea visible sobre imágenes oscuras
-        // Si el color de texto es muy claro pero hay imagen oscura, mantenerlo
-        // Si es muy oscuro, ajustar automáticamente
-        if (color.toUpperCase() === '#000000' && !transparency) {
-            color = '#FFFFFF'; // Texto blanco sobre imagen sin transparencia
-        }
     } else {
-        // SIN FONDO: usar blanco y texto negro
+        // SIN FONDO: usar blanco
         content.style.backgroundColor = '#FFFFFF';
         content.style.backgroundImage = 'none';
-        color = '#000000'; // Forzar texto negro
     }
 
     // Crear contenedor de texto
@@ -679,8 +766,8 @@ function deleteSlide(index) {
     renderQuickCopyList();
 }
 
-function addBlankSlideAfter(index) {
-    slidesData.splice(index + 1, 0, " ");
+function addBlankSlideBefore(index) {
+    slidesData.splice(index, 0, " ");
     // Si agregamos manualmente, desactivamos opciones automáticas
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
@@ -1303,8 +1390,18 @@ async function exportToPDF() {
             slide.style.color = color; slide.style.textAlign = currentAlignment;
             slide.style.justifyContent = 'center'; slide.style.alignItems = vAlignMap[currentVerticalAlignment];
             if (shadow) slide.style.textShadow = '5px 5px 8px rgba(0,0,0,0.85)';
-            if (bgImageData) { slide.style.backgroundImage = `url(${bgImageData})`; slide.style.backgroundSize = 'cover'; slide.style.backgroundPosition = 'center'; }
-            else { slide.style.backgroundColor = 'white'; }
+            const transparency = document.getElementById('bgTransparency').checked;
+            if (bgImageData) {
+                if (transparency) {
+                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+                } else {
+                    slide.style.backgroundImage = `url(${bgImageData})`;
+                }
+                slide.style.backgroundSize = 'cover';
+                slide.style.backgroundPosition = 'center';
+            } else {
+                slide.style.backgroundColor = 'white';
+            }
             slide.innerHTML = slidesData[i].replace(/\n/g, '<br>');
             container.appendChild(slide);
             await new Promise(r => setTimeout(r, 10));
@@ -1418,7 +1515,6 @@ async function mergePdfs() {
 
 // --- IMPORTAR CANCIÓN DESDE ARCHIVO TEXTO/MARKDOWN ---
 function importSongFromFile() {
-    // Crear input de archivo dinámicamente
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.md,.markdown';
@@ -1436,6 +1532,46 @@ function importSongFromFile() {
     input.click();
 }
 
+// 1. PRIMERO: Función auxiliar de limpieza
+function cleanLyricsText(text) {
+    if (!text) return text;
+    
+    // Eliminar líneas que parecen metadatos YAML
+    const lines = text.split('\n');
+    const cleanedLines = lines.filter(line => {
+        const lowerLine = line.trim().toLowerCase();
+        // Filtrar líneas que parecen configuraciones YAML
+        const isYamlLine = 
+            lowerLine.startsWith('title:') ||
+            lowerLine.startsWith('author:') ||
+            lowerLine.startsWith('background:') ||
+            lowerLine.startsWith('addblank') ||
+            lowerLine.startsWith('addtitle') ||
+            lowerLine.startsWith('linesperslide') ||
+            lowerLine.startsWith('fontfamily') ||
+            lowerLine.startsWith('fontsize') ||
+            lowerLine.startsWith('textcolor') ||
+            lowerLine.startsWith('textbold') ||
+            lowerLine.startsWith('textshadow') ||
+            lowerLine.startsWith('alignment') ||
+            lowerLine.startsWith('verticalalignment') ||
+            lowerLine.startsWith('bgtransparency') ||
+            lowerLine === '---';
+        
+        return !isYamlLine;
+    });
+    
+    return cleanedLines.join('\n');
+}
+
+// 2. SEGUNDO: Función auxiliar para parsear booleanos de YAML
+function parseYamlBoolean(value) {
+    if (typeof value === 'boolean') return value;
+    const str = String(value).toLowerCase().trim();
+    return str === 'true' || str === 'yes' || str === '1';
+}
+
+// 3. TERCERO: Función principal de importación
 function parseImportedSong(content) {
     // Normalización inicial de saltos de línea
     const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -1445,94 +1581,330 @@ function parseImportedSong(content) {
     let author = "";
     let background = "";
     let lyrics = [];
-    let inLyrics = false;
     let inYaml = false;
+    let yamlTitle = "";
+    let yamlAuthor = "";
+    
+    // PRIMERA PASADA: Extraer metadatos YAML y configuración
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        
+        // Detectar inicio/fin de YAML front matter
+        if (line === "---") {
+            if (i === 0 && !inYaml) {
+                inYaml = true;
+                continue;
+            } else if (inYaml) {
+                inYaml = false;
+                continue;
+            }
+        }
+        
+        // Extraer metadatos YAML y configuración
+        if (inYaml) {
+            // Metadatos básicos
+            if (line.toLowerCase().startsWith('title:')) {
+                yamlTitle = line.substring(6).trim();
+            } 
+            else if (line.toLowerCase().startsWith('author:')) {
+                yamlAuthor = line.substring(7).trim();
+            } 
+            else if (line.toLowerCase().startsWith('background:')) {
+                background = line.substring(11).trim();
+                if (background === 'null' || background === '') {
+                    background = null;
+                }
+            }
+            // CONFIGURACIÓN DE DIAPOSITIVAS
+            else if (line.toLowerCase().startsWith('addblankSlide:')) {
+                const val = line.substring(14).trim();
+                document.getElementById('addBlankSlide').checked = parseYamlBoolean(val);
+            }
+            else if (line.toLowerCase().startsWith('addtitleslide:')) {
+                const val = line.substring(14).trim();
+                document.getElementById('addTitleSlide').checked = parseYamlBoolean(val);
+            }
+            else if (line.toLowerCase().startsWith('linesperslide:')) {
+                const val = parseInt(line.substring(14).trim());
+                if (!isNaN(val) && val >= 1 && val <= 8) {
+                    document.getElementById('linesPerSlide').value = val;
+                    document.getElementById('linesVal').innerText = val;
+                }
+            }
+            // CONFIGURACIÓN DE FUENTE Y ESTILO
+            else if (line.toLowerCase().startsWith('fontfamily:')) {
+                const val = line.substring(11).trim();
+                const fontSelect = document.getElementById('fontFamily');
+                const optionExists = Array.from(fontSelect.options).some(opt => opt.value === val);
+                if (optionExists) {
+                    fontSelect.value = val;
+                }
+            }
+            else if (line.toLowerCase().startsWith('fontsize:')) {
+                const val = parseInt(line.substring(9).trim());
+                if (!isNaN(val) && val >= 8 && val <= 200) {
+                    document.getElementById('fontSize').value = val;
+                }
+            }
+            else if (line.toLowerCase().startsWith('textcolor:')) {
+                const val = line.substring(10).trim();
+                if (val.match(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)) {
+                    document.getElementById('textColor').value = val;
+                }
+            }
+            else if (line.toLowerCase().startsWith('textbold:')) {
+                const val = line.substring(9).trim();
+                document.getElementById('textBold').checked = parseYamlBoolean(val);
+            }
+            else if (line.toLowerCase().startsWith('textshadow:')) {
+                const val = line.substring(11).trim();
+                document.getElementById('textShadow').checked = parseYamlBoolean(val);
+            }
+            // CONFIGURACIÓN DE ALINEACIÓN
+            else if (line.toLowerCase().startsWith('alignment:')) {
+                const val = line.substring(10).trim();
+                if (['left', 'center', 'right'].includes(val)) {
+                    currentAlignment = val;
+                }
+            }
+            else if (line.toLowerCase().startsWith('verticalalignment:')) {
+                const val = line.substring(18).trim();
+                if (['top', 'center', 'bottom'].includes(val)) {
+                    currentVerticalAlignment = val;
+                }
+            }
+            // CONFIGURACIÓN DE FONDO
+            else if (line.toLowerCase().startsWith('bgtransparency:')) {
+                const val = line.substring(15).trim();
+                document.getElementById('bgTransparency').checked = parseYamlBoolean(val);
+            }
+            continue;
+        }
+    }
+    
+    // SEGUNDA PASADA: Extraer título, autor y letra del cuerpo (si no estaban en YAML)
+    let foundTitle = false;
+    let foundAuthor = false;
     
     for (let i = 0; i < lines.length; i++) {
         let rawLine = lines[i];
         let line = rawLine.trim();
         
-        // YAML Front Matter
-        if (line === "---") {
-            if (i === 0 && !inYaml) { inYaml = true; continue; } 
-            else if (inYaml) { inYaml = false; continue; }
-        }
+        // Saltar líneas vacías al principio
+        if (line === "" && !foundTitle && !foundAuthor && lyrics.length === 0) continue;
         
-        if (inYaml) {
-            if (line.toLowerCase().startsWith('title:')) title = line.substring(6).trim();
-            if (line.toLowerCase().startsWith('author:')) author = line.substring(7).trim();
-            if (line.toLowerCase().startsWith('background:')) background = line.substring(11).trim();
+        // Detectar título Markdown (# Título)
+        const titleMatch = line.match(/^#+\s+(.+)$/);
+        if (titleMatch && !foundTitle && !yamlTitle) {
+            title = titleMatch[1].trim();
+            foundTitle = true;
             continue;
         }
         
-        // Detectar metadatos en el cuerpo (Markdown)
-        if (line.match(/^#+\s*(.*)/)) {
-            if (!title) title = line.replace(/^#+\s*/, '').trim();
-            continue;
-        }
-        if (line.match(/^(\*\*Autor:\*\*|Autor:|@)\s*(.*)/i)) {
-            if (!author) author = line.replace(/^(\*\*Autor:\*\*|Autor:|@)\s*/i, '').trim();
+        // Detectar autor (varios formatos)
+        const authorMatch1 = line.match(/^\*\*Autor:\*\*\s*(.+)$/i);
+        const authorMatch2 = line.match(/^Autor:\s*(.+)$/i);
+        const authorMatch3 = line.match(/^@\s*(.+)$/i);
+        
+        if ((authorMatch1 || authorMatch2 || authorMatch3) && !foundAuthor && !yamlAuthor) {
+            const match = authorMatch1 || authorMatch2 || authorMatch3;
+            author = match[1].trim();
+            foundAuthor = true;
             continue;
         }
         
-        // Capturar letra
-        if (inLyrics || (line !== "" && !line.match(/^\[.*\]$/))) {
-            inLyrics = true;
-            // No hacemos trim() aquí para preservar diapositivas en blanco (espacios)
+        // Si ya pasamos los metadatos, todo lo demás es letra
+        if (foundTitle || foundAuthor || !line.match(/^#|^\*\*Autor|^Autor:|^@/)) {
             lyrics.push(rawLine);
         }
     }
     
-    // Limpiar metadatos del cuerpo si se colaron en lyrics
-    const cleanLyrics = lyrics.filter(l => {
-        const t = l.trim();
-        if (t === "" || t === " ") return true;
-        if (t === `# ${title}` || t.includes(`**Autor:** ${author}`)) return false;
+    // Priorizar metadatos YAML sobre los del cuerpo
+    if (yamlTitle) title = yamlTitle;
+    if (yamlAuthor) author = yamlAuthor;
+    
+    // Limpiar título de posibles caracteres no deseados
+    title = title.replace(/[#*_]/g, '').trim();
+    author = author.replace(/[#*_]/g, '').trim();
+    
+    // Si el título parece una etiqueta (#Algo), extraer solo el nombre
+    if (title.startsWith('#')) {
+        const tagMatch = title.match(/^#([^(]+)/);
+        if (tagMatch) {
+            title = tagMatch[1].trim();
+        }
+    }
+    
+    // Si no hay título, usar un valor por defecto
+    if (!title) title = "Canción sin título";
+    
+    // Limpiar la letra: eliminar líneas que sean solo metadatos repetidos
+    const cleanLyrics = lyrics.filter(line => {
+        const trimmed = line.trim();
+        if (trimmed === "") return true;
+        // Eliminar líneas que sean exactamente el título o autor ya procesados
+        if (trimmed === `# ${title}`) return false;
+        if (trimmed === `**Autor:** ${author}`) return false;
+        if (trimmed === `Autor: ${author}`) return false;
+        if (trimmed === `@${author}`) return false;
         return true;
     });
-
-    // Cargar al editor
-    document.getElementById('songName').value = title || "";
+    
+    // ASIGNAR VALORES AL EDITOR
+    document.getElementById('songName').value = title;
     document.getElementById('songAuthor').value = author || "";
-    document.getElementById('lyricsInput').value = cleanLyrics.join('\n').replace(/^[\n]+|[\n]+$/g, '');
     
-    if (background && background !== "null") bgImageData = background;
-    else bgImageData = null;
+    // Unir la letra con saltos de línea
+    let lyricsText = cleanLyrics.join('\n');
     
+    // === APLICAR LIMPIEZA ADICIONAL ===
+    lyricsText = cleanLyricsText(lyricsText);
+    
+    // Eliminar saltos de línea excesivos al inicio y final
+    lyricsText = lyricsText.replace(/^\n+/, '').replace(/\n+$/, '');
+    document.getElementById('lyricsInput').value = lyricsText;
+    
+    // Cargar fondo si existe y es válido
+    if (background && background !== 'null' && background !== '' && background !== 'null') {
+        if (background.startsWith('http') || background.startsWith('data:') || background.startsWith('/')) {
+            bgImageData = background;
+        } else {
+            bgImageData = null;
+        }
+    } else {
+        bgImageData = null;
+    }
+    
+    // Actualizar los estilos visuales
     updateStyles();
+    
+    // Generar la etiqueta automáticamente
+    generateTag();
+    
+    // Procesar las diapositivas con la nueva configuración
     processLyrics();
-    alert(`Canción "${title || 'Importada'}" cargada.`);
+    
+    // Mostrar mensaje de éxito con los datos cargados
+    let configLoaded = [];
+    if (document.getElementById('addBlankSlide').checked) configLoaded.push("Slide vacío");
+    if (document.getElementById('addTitleSlide').checked) configLoaded.push("Portada");
+    
+    alert(`✅ Canción importada correctamente!\n\n` +
+          `📌 Título: ${title}\n` +
+          `✍️ Autor: ${author || "(No especificado)"}\n` +
+          `📄 Diapositivas: ${slidesData.length} generadas\n` +
+          `⚙️ Configuración: ${configLoaded.length ? configLoaded.join(', ') : 'Ninguna'}\n` +
+          `🖼️ Fondo: ${bgImageData ? 'Cargado' : 'Sin fondo'}`);
 }
 
 // También permitir importar canciones guardadas previamente (exportar como .md)
 function exportSongAsMarkdown() {
     const name = document.getElementById('songName').value.trim() || "Sin título";
     const author = document.getElementById('songAuthor').value.trim();
-    const lyrics = document.getElementById('lyricsInput').value.trim();
     
+    // Limpiar el nombre de cualquier formato de etiqueta
+    let cleanName = name;
+    if (cleanName.startsWith('#')) {
+        const tagMatch = cleanName.match(/^#([^(]+)/);
+        if (tagMatch) {
+            cleanName = tagMatch[1].trim();
+        }
+    }
+    
+    // Obtener la configuración actual
+    const addBlank = document.getElementById('addBlankSlide').checked;
+    const addTitle = document.getElementById('addTitleSlide').checked;
+    const linesPerSlide = document.getElementById('linesPerSlide').value;
+    const fontFamily = document.getElementById('fontFamily').value;
+    const fontSize = document.getElementById('fontSize').value;
+    const textColor = document.getElementById('textColor').value;
+    const textBold = document.getElementById('textBold').checked;
+    const textShadow = document.getElementById('textShadow').checked;
+    const alignment = currentAlignment;
+    const verticalAlignment = currentVerticalAlignment;
+    const bgTransparency = document.getElementById('bgTransparency').checked;
+    
+    // Construir el front matter YAML mejorado con toda la configuración
     let markdown = "---\n";
-    markdown += `title: ${name}\n`;
+    markdown += `title: ${cleanName}\n`;
     if (author) markdown += `author: ${author}\n`;
-    if (bgImageData) markdown += `background: ${bgImageData}\n`;
+    markdown += `background: ${bgImageData || 'null'}\n`;
+    markdown += `addBlankSlide: ${addBlank}\n`;
+    markdown += `addTitleSlide: ${addTitle}\n`;
+    markdown += `linesPerSlide: ${linesPerSlide}\n`;
+    markdown += `fontFamily: ${fontFamily}\n`;
+    markdown += `fontSize: ${fontSize}\n`;
+    markdown += `textColor: ${textColor}\n`;
+    markdown += `textBold: ${textBold}\n`;
+    markdown += `textShadow: ${textShadow}\n`;
+    markdown += `alignment: ${alignment}\n`;
+    markdown += `verticalAlignment: ${verticalAlignment}\n`;
+    markdown += `bgTransparency: ${bgTransparency}\n`;
     markdown += "---\n\n";
     
-    // Header en el body para compatibilidad con otros lectores MD
-    markdown += `# ${name}\n`;
+    // Título en formato Markdown
+    markdown += `# ${cleanName}\n\n`;
+    
+    // Autor en formato legible
     if (author) {
-        markdown += `**Autor:** ${author}\n`;
+        markdown += `**Autor:** ${author}\n\n`;
     }
-    markdown += `\n${lyrics}`;
+    
+    // La letra (usando slidesData para preservar la estructura exacta)
+    if (slidesData.length > 0) {
+        // Filtrar la portada y slide vacío si están marcados como automáticos
+        let lyricsToExport = [...slidesData];
+        
+        // Si la portada está activada automáticamente, la removemos del texto de letra
+        if (addTitle && lyricsToExport.length > 0) {
+            const titleText = author ? `${cleanName}\n${author}` : cleanName;
+            const blankIndex = addBlank ? 1 : 0;
+            if (lyricsToExport[blankIndex] === titleText || lyricsToExport[blankIndex] === cleanName) {
+                lyricsToExport.splice(blankIndex, 1);
+            }
+        }
+        
+        // Si el slide vacío está activado automáticamente, lo removemos
+        if (addBlank && lyricsToExport.length > 0 && lyricsToExport[0].trim() === "") {
+            lyricsToExport.splice(0, 1);
+        }
+        
+        // Unir con doble salto de línea para preservar la estructura de diapositivas
+        markdown += lyricsToExport.join('\n\n');
+    } else {
+        // Fallback al textarea
+        const lyrics = document.getElementById('lyricsInput').value.trim();
+        markdown += lyrics;
+    }
+    
+    // Asegurar que termine con un salto de línea
+    if (!markdown.endsWith('\n')) {
+        markdown += '\n';
+    }
     
     // Descargar archivo
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${name.replace(/[^a-z0-9]/gi, '_')}.md`;
+    const safeName = cleanName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    a.download = `${safeName}.md`;
     a.click();
     URL.revokeObjectURL(url);
     
-    alert("Canción exportada como archivo .md (con fondo y metadatos)");
+    // Mostrar resumen de lo exportado
+    let configSummary = [];
+    if (addBlank) configSummary.push("Slide vacío");
+    if (addTitle) configSummary.push("Portada");
+    configSummary.push(`${linesPerSlide} líneas/diapositiva`);
+    
+    alert(`✅ Canción exportada correctamente!\n\n` +
+          `📌 Archivo: ${safeName}.md\n` +
+          `📋 Título: ${cleanName}\n` +
+          `✍️ Autor: ${author || "(No especificado)"}\n` +
+          `⚙️ Configuración: ${configSummary.join(', ')}\n` +
+          `🖼️ Fondo: ${bgImageData ? 'Incluido' : 'No incluido'}\n\n` +
+          `💡 Puedes importar este archivo usando el botón "Importar .md"`);
 }
 
 // --- CONVERTIR PPTX A MD (FORMATO IMPORTABLE) ---
@@ -1560,9 +1932,9 @@ async function convertPptxToMd(input) {
             return numA - numB;
         });
         
-        let allTexts = [];
         let title = "";
         let author = "";
+        let extractedSlides = [];
         
         // 2. Extraer metadatos (título y autor) de core.xml
         if (zip.files['docProps/core.xml']) {
@@ -1573,6 +1945,7 @@ async function convertPptxToMd(input) {
             author = xmlDoc.getElementsByTagName("dc:creator")[0]?.textContent || "";
         }
 
+        // 3. Extraer y limpiar texto de cada diapositiva
         for (let i = 0; i < slideFiles.length; i++) {
             const slideXml = await zip.files[slideFiles[i]].async('string');
             const parser = new DOMParser();
@@ -1585,60 +1958,129 @@ async function convertPptxToMd(input) {
                 slideText += node.textContent + " ";
             }
             slideText = slideText.trim();
-
-            // FILTRO: Ignorar diapositivas que solo contienen basura de la librería o están vacías
-            if (slideText && !slideText.toLowerCase().includes("pptxgenjs")) {
-                // Si no hay título de metadatos o el título actual es genérico, intentar extraerlo
-                if ((!title || title.toLowerCase().includes("pptxgenjs")) && i === 0) {
-                    const lines = slideText.split(/\n/);
-                    title = lines[0].substring(0, 100).trim();
-                    if (lines.length > 1 && !author) author = lines[1].trim();
-                } else {
-                    allTexts.push(slideText);
-                }
+            
+            // FILTRO MEJORADO: Ignorar diapositivas que contienen metadatos YAML o configuraciones
+            const lowerText = slideText.toLowerCase();
+            const isMetadataSlide = 
+                lowerText.includes("title:") ||
+                lowerText.includes("author:") ||
+                lowerText.includes("background:") ||
+                lowerText.includes("addblank") ||
+                lowerText.includes("addtitle") ||
+                lowerText.includes("linesperslide") ||
+                lowerText.includes("fontfamily") ||
+                lowerText.includes("fontsize") ||
+                lowerText.includes("textcolor") ||
+                lowerText.includes("textbold") ||
+                lowerText.includes("textshadow") ||
+                lowerText.includes("alignment") ||
+                lowerText.includes("verticalalignment") ||
+                lowerText.includes("bgtransparency") ||
+                lowerText === "---" ||
+                slideText === "";
+            
+            // También filtrar diapositivas que solo contienen "---" o son de la librería
+            const isLibraryText = lowerText.includes("pptxgenjs");
+            
+            if (slideText && !isMetadataSlide && !isLibraryText) {
+                extractedSlides.push(slideText);
             }
         }
         
-        // Limpieza final de título y autor por si acaso
-        if (title && title.toLowerCase().includes("pptxgenjs")) title = file.name.replace(/\.pptx$/i, '');
-        if (author && author.toLowerCase().includes("pptxgenjs")) author = "";
+        // Limpieza final de título y autor
+        if (title && (title.toLowerCase().includes("pptxgenjs") || title === "")) {
+            title = file.name.replace(/\.pptx$/i, '');
+        }
+        if (author && author.toLowerCase().includes("pptxgenjs")) {
+            author = "";
+        }
         
-        // 3. Construir el contenido MD
+        // Si no se encontró título, usar el nombre del archivo
+        if (!title) {
+            title = file.name.replace(/\.pptx$/i, '');
+        }
+        
+        // Si el título parece una etiqueta (#Algo), extraer solo el nombre
+        if (title.startsWith('#')) {
+            const tagMatch = title.match(/^#([^(]+)/);
+            if (tagMatch) {
+                title = tagMatch[1].trim();
+            }
+        }
+        
+        // Limpiar título y autor de caracteres especiales
+        title = title.replace(/[#*_]/g, '').trim();
+        author = author.replace(/[#*_]/g, '').trim();
+        
+        // 4. CONSTRUIR EL NUEVO FORMATO MD
         let markdown = "---\n";
         markdown += `title: ${title}\n`;
         if (author) markdown += `author: ${author}\n`;
         markdown += `background: null\n`;
-        markdown += `---\n\n`;
         
-        markdown += `# ${title}\n`;
-        if (author) markdown += `**Autor:** ${author}\n`;
-        markdown += `\n`;
+        // CONFIGURACIÓN PREDETERMINADA (sensata para worship)
+        markdown += `addBlankSlide: false\n`;  // CAMBIADO: false por defecto
+        markdown += `addTitleSlide: false\n`;  // CAMBIADO: false por defecto
+        markdown += `linesPerSlide: 2\n`;
+        markdown += `fontFamily: Cambria\n`;
+        markdown += `fontSize: 55\n`;
+        markdown += `textColor: #000000\n`;
+        markdown += `textBold: true\n`;
+        markdown += `textShadow: false\n`;
+        markdown += `alignment: center\n`;
+        markdown += `verticalAlignment: center\n`;
+        markdown += `bgTransparency: false\n`;
+        markdown += "---\n\n";
         
-        // Unir el texto de todas las diapositivas
-        if (allTexts.length > 0) {
-            markdown += allTexts.join('\n\n');
+        // Título en formato Markdown
+        markdown += `# ${title}\n\n`;
+        
+        // Autor en formato legible
+        if (author) {
+            markdown += `**Autor:** ${author}\n\n`;
+        }
+        
+        // LA LETRA: Unir solo las diapositivas que son contenido real
+        if (extractedSlides.length > 0) {
+            // Limpiar cada slide
+            const cleanedSlides = extractedSlides.map(slide => {
+                // Eliminar espacios múltiples
+                return slide.replace(/\s+/g, ' ').trim();
+            });
+            markdown += cleanedSlides.join('\n\n');
         } else {
             markdown += "*No se pudo extraer texto significativo del archivo PPTX.*";
         }
         
-        // 4. Descargar el archivo MD
+        // Asegurar que termine con un salto de línea
+        if (!markdown.endsWith('\n')) {
+            markdown += '\n';
+        }
+        
+        // 5. Descargar el archivo MD
         const blob = new Blob([markdown], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const safeName = title.replace(/[^a-z0-9]/gi, '_');
+        const safeName = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         a.download = `${safeName}.md`;
         a.click();
         URL.revokeObjectURL(url);
         
-        alert(`✅ ¡Conversión exitosa!\n\nTítulo: ${title}\nDiapositivas procesadas: ${allTexts.length}\n\nAhora puedes usar el botón "Importar .md" en el editor para cargar la canción.`);
+        alert(`✅ ¡Conversión exitosa!\n\n` +
+              `📌 Título: ${title}\n` +
+              `✍️ Autor: ${author || "(No detectado)"}\n` +
+              `📄 Diapositivas de contenido: ${extractedSlides.length}\n` +
+              `⚙️ Configuración: addBlankSlide: false, addTitleSlide: false\n\n` +
+              `💡 Las opciones de portada y slide vacío están DESACTIVADAS por defecto,\n` +
+              `   ya que el PPTX original ya contiene su propia estructura.`);
         
     } catch (error) {
         console.error("Error al convertir PPTX:", error);
         alert("Error al procesar el archivo PPTX: " + error.message);
     } finally {
         hideGlobalLoader();
-        input.value = ""; // Limpiar input
+        input.value = "";
     }
 }
 
