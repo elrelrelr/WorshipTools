@@ -1,6 +1,6 @@
 // --- DATA ---
 const galleryImages = [];
-for (let i = 1; i <= 23; i++) {
+for (let i = 1; i <= 27; i++) {
     galleryImages.push(`imagenes/fondo${i}.jpg`);
 }
 
