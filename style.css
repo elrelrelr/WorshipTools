@@ -6,6 +6,11 @@
             color: #e2e8f0;
         }
 
+        /* Prevent FOUC while Tailwind CDN is loading */
+        .hidden {
+            display: none !important;
+        }
+
         /* Estilo de Preview */
         .slide-preview {
             aspect-ratio: 16/9;

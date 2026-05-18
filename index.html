@@ -9,8 +9,15 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+            }
+        } else {
+            console.warn("Tailwind CSS no pudo cargar desde el CDN.");
+            window.addEventListener('load', function() {
+                alert("Error crítico de diseño: No se pudo cargar la interfaz.\n\nPor favor, desactiva tu bloqueador de anuncios (AdBlock), apaga tu VPN, o intenta cambiar a otra red de internet para que la página funcione correctamente.");
+            });
         }
     </script>
     <!-- FontAwesome -->
