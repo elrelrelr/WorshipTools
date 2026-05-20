@@ -471,12 +471,19 @@ function renderSlides() {
         btnProject.title = "Proyectar Diapositiva (Pantalla Completa)";
         btnProject.onclick = (e) => { e.stopPropagation(); openProjection(i); };
 
+        // Botón Arrastrar (Handle)
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
+        dragHandle.title = "Arrastrar para reordenar";
+
         overlay.appendChild(btnProject);
         overlay.appendChild(btnEdit);
         overlay.appendChild(btnAdd);
         overlay.appendChild(btnDel);
         
         slide.appendChild(num);
+        slide.appendChild(dragHandle); // Añadir handle
         slide.appendChild(content);
         slide.appendChild(overlay);
         container.appendChild(slide);
@@ -490,44 +497,36 @@ function renderSlides() {
     }
 
     // Inicializar Sortable para las diapositivas
-    // Reemplaza la parte de Sortable en renderSlides() con esto:
-if (container && typeof Sortable !== 'undefined' && slidesData.length > 0) {
-    // Destruir instancia anterior si existe
-    if (slidesSortable) {
-        slidesSortable.destroy();
-        slidesSortable = null;
-    }
-    
-    slidesSortable = new Sortable(container, {
-        animation: 300,
-        ghostClass: 'dragging-ghost',
-        dragClass: 'dragging-class',
-        handle: '.slide-preview',
-        delay: 0, // Sin delay para respuesta inmediata
-        delayOnTouchOnly: false,
-        touchStartThreshold: 10, // Mayor umbral para evitar scroll accidental
-        scroll: true,
-        bubbleScroll: true,
-        preventOnFilter: false,
-        onStart: function() {
-            container.style.cursor = 'grabbing';
-        },
-        onEnd: function(evt) {
-            container.style.cursor = '';
-            if (evt.oldIndex !== evt.newIndex) {
-                const item = slidesData.splice(evt.oldIndex, 1)[0];
-                slidesData.splice(evt.newIndex, 0, item);
-                
-                document.getElementById('addBlankSlide').checked = false;
-                document.getElementById('addTitleSlide').checked = false;
-                
-                renderSlides();
-                syncSlidesToLyrics();
-                renderQuickCopyList();
+    if (container && typeof Sortable !== 'undefined' && slidesData.length > 0) {
+        slidesSortable = new Sortable(container, {
+            animation: 300,
+            ghostClass: 'dragging-ghost',
+            dragClass: 'dragging-class',
+            handle: '.drag-handle', // USAR EL HANDLE
+            delay: 0,
+            delayOnTouchOnly: false,
+            touchStartThreshold: 10,
+            scroll: true,
+            bubbleScroll: true,
+            onStart: function() {
+                container.style.cursor = 'grabbing';
+            },
+            onEnd: function(evt) {
+                container.style.cursor = '';
+                if (evt.oldIndex !== evt.newIndex) {
+                    const item = slidesData.splice(evt.oldIndex, 1)[0];
+                    slidesData.splice(evt.newIndex, 0, item);
+                    
+                    document.getElementById('addBlankSlide').checked = false;
+                    document.getElementById('addTitleSlide').checked = false;
+                    
+                    renderSlides();
+                    syncSlidesToLyrics();
+                    renderQuickCopyList();
+                }
             }
-        }
-    });
-}
+        });
+    }
 }
 
 // --- PROYECCIÓN (PANTALLA COMPLETA) ---

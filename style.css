@@ -21,13 +21,41 @@
             color: black;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s, border-color 0.2s;
-            cursor: pointer;
+            cursor: default; /* Cambiado de pointer a default */
             border: 2px solid transparent;
         }
         
         .slide-preview:hover {
             transform: scale(1.01);
             border-color: #3b82f6;
+        }
+
+        /* Drag Handle (NUEVO) */
+        .drag-handle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: rgba(15, 23, 42, 0.8);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            z-index: 40;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .drag-handle:hover {
+            background-color: #3b82f6;
+            transform: scale(1.1);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
         }
 
         /* Overlay de opciones en hover */
@@ -47,6 +75,27 @@
         
         .slide-preview:hover .slide-overlay {
             opacity: 1;
+        }
+
+        /* En pantallas táctiles, el overlay se activa al tocar la diapositiva */
+        @media (max-width: 768px) {
+            .slide-overlay {
+                background: rgba(15, 23, 42, 0.5); /* Menos opaco para ver contenido */
+                gap: 8px;
+            }
+            
+            /* Asegurar que el handle sea muy visible en móvil */
+            .drag-handle {
+                width: 40px;
+                height: 40px;
+                background-color: #3b82f6; /* Color primario para destacar */
+                font-size: 1.2rem;
+            }
+
+            .overlay-btn {
+                width: 44px; /* Target táctil más grande */
+                height: 44px;
+            }
         }
 
         .overlay-btn {
