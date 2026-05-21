@@ -1,7 +1,16 @@
 // --- DATA ---
+// Generación dinámica de rutas: Intentamos cargar un rango amplio.
+// El sistema ocultará automáticamente las que no existan.
 const galleryImages = [];
-for (let i = 1; i <= 27; i++) {
+
+// Generar rutas para fondos (hasta 100 por si acaso)
+for (let i = 1; i <= 100; i++) {
     galleryImages.push(`imagenes/fondo${i}.jpg`);
+}
+
+// Generar rutas para GIFs (hasta 50 por si acaso)
+for (let i = 1; i <= 50; i++) {
+    galleryImages.push(`imagenes/gif${i}.gif`);
 }
 
 // --- ESTADO ---
@@ -358,19 +367,62 @@ function cleanAndCorrectLyrics() {
         // Eliminar puntuación final innecesaria para diapositivas
         l = l.replace(/[,.;]$/, "");
 
-        // Correcciones ortográficas comunes en español de alabanza
+        // Correcciones ortográficas comunes en español de alabanza y gramática general
         const corrections = [
+            // Divinidad (Asegurar tildes y mayúsculas en contextos de adoración)
             { bad: /\bEspiritu\b/gi, good: "Espíritu" },
             { bad: /\bJesus\b/gi, good: "Jesús" },
-            { bad: /\bAmen\b/gi, good: "Amén" },
             { bad: /\bCorazon\b/gi, good: "Corazón" },
             { bad: /\bBendicion\b/gi, good: "Bendición" },
             { bad: /\bOracion\b/gi, good: "Oración" },
             { bad: /\bAdoracion\b/gi, good: "Adoración" },
-            { bad: /\bDíos\b/gi, good: "Dios" }, // Error común ponerle tilde a Dios
+            { bad: /\bExaltacion\b/gi, good: "Exaltación" },
+            { bad: /\bProclamacion\b/gi, good: "Proclamación" },
+            { bad: /\bRedencion\b/gi, good: "Redención" },
+            { bad: /\bSalvacion\b/gi, good: "Salvación" },
+            { bad: /\bComunion\b/gi, good: "Comunión" },
+            { bad: /\bResurreccion\b/gi, good: "Resurrección" },
+            { bad: /\bPasión\b/gi, good: "Pasión" },
+            { bad: /\bUncion\b/gi, good: "Unción" },
+            { bad: /\bLiberacion\b/gi, good: "Liberación" },
+            { bad: /\bPerdon\b/gi, good: "Perdón" },
+            { bad: /\bCreacion\b/gi, good: "Creación" },
+            { bad: /\bNacion\b/gi, good: "Nación" },
+            { bad: /\bTentacion\b/gi, good: "Tentación" },
+            { bad: /\bDireccion\b/gi, good: "Dirección" },
+
+            // Palabras frecuentes en cantos
+            { bad: /\bAmen\b/gi, good: "Amén" },
             { bad: /\bCanci[oó]n\b/gi, good: "Canción" },
-            { bad: /\bTi\b/gi, good: "ti" }, // "ti" nunca lleva tilde (error común)
-            { bad: /\bS[oó]lo\b/gi, good: "Solo" } // RAE recomienda sin tilde
+            { bad: /\bAlabare\b/gi, good: "Alabaré" },
+            { bad: /\bCantare\b/gi, good: "Cantaré" },
+            { bad: /\bAdorare\b/gi, good: "Adoraré" },
+            { bad: /\bBuscare\b/gi, good: "Buscaré" },
+            { bad: /\bEstare\b/gi, good: "Estaré" },
+            { bad: /\bReinara\b/gi, good: "Reinará" },
+            { bad: /\bVendra\b/gi, good: "Vendrá" },
+            { bad: /\bSera\b/gi, good: "Será" },
+            { bad: /\bAlla\b/gi, good: "Allá" },
+            { bad: /\bAqui\b/gi, good: "Aquí" },
+            { bad: /\bAsi\b/gi, good: "Así" },
+            { bad: /\bIncomparable\b/gi, good: "Incomparable" },
+            { bad: /\bMajestad\b/gi, good: "Majestad" },
+            { bad: /\bSantidad\b/gi, good: "Santidad" },
+            { bad: /\bEternidad\b/gi, good: "Eternidad" },
+            { bad: /\bPro jimo\b/gi, good: "Prójimo" },
+            { bad: /\bProjimo\b/gi, good: "Prójimo" },
+
+            // Errores de tildación "excesiva" o incorrecta (RAE)
+            { bad: /\bDíos\b/gi, good: "Dios" },    // Dios no lleva tilde
+            { bad: /\bTi\b/gi, good: "ti" },        // ti no lleva tilde
+            { bad: /\bFe\b/gi, good: "fe" },        // fe no lleva tilde
+            { bad: /\bDio\b/gi, good: "dio" },      // dio no lleva tilde
+            { bad: /\bVio\b/gi, good: "vio" },      // vio no lleva tilde
+            { bad: /\bFue\b/gi, good: "fue" },      // fue no lleva tilde
+            { bad: /\bFui\b/gi, good: "fui" },      // fui no lleva tilde
+            { bad: /\bS[oó]lo\b/gi, good: "Solo" }, // Solo ya no lleva tilde según RAE
+            { bad: /\bEspirítu\b/gi, good: "Espíritu" }, // Error de tilde en la i
+            { bad: /\bAngel\b/gi, good: "Ángel" }
         ];
 
         corrections.forEach(c => {
@@ -900,7 +952,13 @@ function openGallery() {
         img.src = url;
         img.loading = 'lazy';
         img.className = 'w-full h-full object-cover rounded-lg';
+        
+        // Al cargar correctamente, quitar animación de carga
         img.onload = () => item.classList.remove('animate-pulse');
+        
+        // MODIFICADO: Si la imagen no existe (404), eliminar el item de la galería automáticamente
+        // Esto permite agregar fotos o gifs a la carpeta y que aparezcan solos
+        img.onerror = () => item.remove();
 
         item.appendChild(img);
         grid.appendChild(item);
@@ -1209,45 +1267,42 @@ async function downloadSetlist() {
 
     try {
         let pptx = new PptxGenJS();
-        pptx.layout = 'LAYOUT_16x9';
         pptx.defineLayout({ name: 'WIDE', width: 10, height: 5.625 });
         pptx.layout = 'WIDE';
 
-        for (const song of repertoireList) {
+        for (let idx = 0; idx < repertoireList.length; idx++) {
+            const song = repertoireList[idx];
             const st = song.styles;
-            
-            // CORRECCIÓN: Usar la función auxiliar para obtener el nombre de la fuente
-            let fontName = getFontFamilyName(st.font);
+            const masterName = `MASTER_SONG_${idx}`;
 
+            // DEFINIR MASTER PARA ESTA CANCIÓN (Evita duplicar imágenes y corrupción)
+            let masterObj = { title: masterName, objects: [] };
+            if (st.bgImage) {
+                masterObj.objects.push({ 
+                    image: { x: 0, y: 0, w: 10, h: 5.625, data: st.bgImage, sizing: { type: 'cover' } } 
+                });
+                if (st.bgTransparency) {
+                    masterObj.objects.push({ 
+                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+                    });
+                }
+            } else {
+                masterObj.background = { color: 'FFFFFF' };
+            }
+            pptx.defineSlideMaster(masterObj);
+
+            let fontName = getFontFamilyName(st.font);
             const alignMap = { 'left': 'left', 'center': 'center', 'right': 'right' };
             const vAlignMap = { 'top': 'top', 'center': 'middle', 'bottom': 'bottom' };
             const shadowOpts = st.shadow ? { type: 'outer', angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
 
-            // DIAPOSITIVA EN BLANCO (siempre al inicio de cada canción)
-            let blankSlide = pptx.addSlide();
-            if (st.bgImage) {
-                blankSlide.background = { data: st.bgImage };
-            } else {
-                blankSlide.background = { color: "FFFFFF" };
-            }
+            // DIAPOSITIVA EN BLANCO
+            pptx.addSlide({ masterName: masterName });
 
             // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
             for (let i = 0; i < song.slides.length; i++) {
                 let text = song.slides[i].trim() || " ";
-                
-                let slide = pptx.addSlide();
-                
-                if (st.bgImage) {
-                    slide.background = { data: st.bgImage };
-                    if (st.bgTransparency) {
-                        slide.addShape(pptx.ShapeType.rect, {
-                            x: 0, y: 0, w: '100%', h: '100%',
-                            fill: { color: 'FFFFFF', transparency: 20 }
-                        });
-                    }
-                } else {
-                    slide.background = { color: "FFFFFF" };
-                }
+                let slide = pptx.addSlide({ masterName: masterName });
 
                 slide.addText(text, {
                     x: 0.5, y: 0.5, w: '90%', h: '80%',
@@ -1284,6 +1339,13 @@ function getFontFamilyName(fontValue) {
     return "Cambria"; // Default
 }
 
+// Función auxiliar para limpiar el prefijo DataURL y evitar corrupción en PPTX
+function getBase64Data(data) {
+    if (!data) return null;
+    if (data.includes('base64,')) return data.split('base64,')[1];
+    return data;
+}
+
 // --- PPTX ---
 async function downloadPPTX() {
     if (slidesData.length === 0) return alert("No hay diapositivas para exportar.");
@@ -1295,14 +1357,29 @@ async function downloadPPTX() {
 
     try {
         let pptx = new PptxGenJS();
-        pptx.layout = 'LAYOUT_16x9';
         pptx.defineLayout({ name: 'WIDE', width: 10, height: 5.625 });
         pptx.layout = 'WIDE';
 
-        const fontSelect = document.getElementById('fontFamily').value;
-        // CORRECCIÓN: Usar la función auxiliar
-        const fontName = getFontFamilyName(fontSelect);
+        // DEFINIR MASTER PARA ESTA PRESENTACIÓN (Soluciona corrupción y fallas en 2da slide)
+        const masterName = "GLOBAL_BG_MASTER";
+        let masterObj = { title: masterName, objects: [] };
 
+        if (bgImageData) {
+            masterObj.objects.push({ 
+                image: { x: 0, y: 0, w: 10, h: 5.625, data: bgImageData, sizing: { type: 'cover' } } 
+            });
+            if (document.getElementById('bgTransparency').checked) {
+                masterObj.objects.push({ 
+                    rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+                });
+            }
+        } else {
+            masterObj.background = { color: 'FFFFFF' };
+        }
+        pptx.defineSlideMaster(masterObj);
+
+        const fontSelect = document.getElementById('fontFamily').value;
+        const fontName = getFontFamilyName(fontSelect);
         const fontSize = parseInt(document.getElementById('fontSize').value) || 60;
         const fontColor = document.getElementById('textColor').value.replace('#', '');
         const alignMap = { 'left': 'left', 'center': 'center', 'right': 'right' };
@@ -1313,19 +1390,8 @@ async function downloadPPTX() {
 
         for (let rawText of slidesData) {
             let text = rawText.trim() || " ";
-            let slide = pptx.addSlide();
-
-            if (bgImageData) {
-                slide.background = { data: bgImageData };
-                if (document.getElementById('bgTransparency').checked) {
-                    slide.addShape(pptx.ShapeType.rect, {
-                        x: 0, y: 0, w: '100%', h: '100%',
-                        fill: { color: 'FFFFFF', transparency: 20 }
-                    });
-                }
-            } else {
-                slide.background = { color: "FFFFFF" };
-            }
+            // Aplicar el master a cada slide
+            let slide = pptx.addSlide({ masterName: masterName });
 
             slide.addText(text, {
                 x: 0.5, y: 0.5, w: '90%', h: '80%',
@@ -1609,7 +1675,9 @@ function parseImportedSong(content) {
                 yamlAuthor = line.substring(7).trim();
             } 
             else if (line.toLowerCase().startsWith('background:')) {
-                background = line.substring(11).trim();
+                // MODIFICADO: Regex para capturar Base64 entre comillas o directamente
+                const bgMatch = line.match(/background:\s*["']?(.*?)["']?$/i);
+                background = bgMatch ? bgMatch[1].trim() : "";
                 if (background === 'null' || background === '') {
                     background = null;
                 }
@@ -1827,7 +1895,7 @@ function exportSongAsMarkdown() {
     let markdown = "---\n";
     markdown += `title: ${cleanName}\n`;
     if (author) markdown += `author: ${author}\n`;
-    markdown += `background: ${bgImageData || 'null'}\n`;
+    markdown += `background: "${bgImageData || ''}"\n`;
     markdown += `addBlankSlide: ${addBlank}\n`;
     markdown += `addTitleSlide: ${addTitle}\n`;
     markdown += `linesPerSlide: ${linesPerSlide}\n`;
