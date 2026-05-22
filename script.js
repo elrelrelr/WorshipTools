@@ -1,3 +1,5 @@
+console.log("Script.js cargado correctamente.");
+
 // --- DATA ---
 // Rutas de imágenes que realmente existen en la carpeta
 const galleryImages = [
@@ -9,10 +11,9 @@ const galleryImages = [
     'imagenes/fondo19.jpg', 'imagenes/fondo20.jpg', 'imagenes/fondo21.jpg', 'imagenes/fondo22.jpg', 
     'imagenes/fondo23.jpg', 'imagenes/fondo24.jpg', 'imagenes/fondo25.jpg', 'imagenes/fondo26.jpg', 
     'imagenes/fondo27.jpg',
-    // GIFs
-    'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif8.gif', 'imagenes/gif9.gif', 
-    'imagenes/gif11.gif', 'imagenes/gif13.gif', 'imagenes/gif14.gif', 'imagenes/gif15.gif', 
-    'imagenes/gif17.gif'
+    // GIFs (Se han verificado que solo existen del 1 al 7)
+    'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif3.gif', 'imagenes/gif4.gif', 
+    'imagenes/gif5.gif', 'imagenes/gif6.gif', 'imagenes/gif7.gif'
 ];
 
 // --- ESTADO ---
@@ -945,6 +946,8 @@ function removeBackground() {
 function openGallery() {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
+    console.log("Cargando galería con " + galleryImages.length + " imágenes...");
+    
     galleryImages.forEach(url => {
         const item = document.createElement('div');
         item.className = 'gallery-item bg-slate-700 animate-pulse';
@@ -952,9 +955,17 @@ function openGallery() {
 
         const img = document.createElement('img');
         
-        // Adjuntar eventos ANTES de setear el src para evitar que se pierdan si carga rápido (cache)
-        img.onload = () => item.classList.remove('animate-pulse');
-        img.onerror = () => item.remove();
+        img.onload = () => {
+            item.classList.remove('animate-pulse');
+            item.style.backgroundColor = 'transparent';
+        };
+        
+        img.onerror = () => {
+            console.warn("No se pudo cargar: " + url);
+            // En lugar de borrarlo, podemos mostrar un placeholder o simplemente ocultarlo
+            item.classList.remove('animate-pulse');
+            item.innerHTML = '<div class="text-[8px] text-slate-500 flex items-center justify-center h-full">Error</div>';
+        };
         
         img.src = url;
         img.loading = 'lazy';
@@ -963,6 +974,7 @@ function openGallery() {
         item.appendChild(img);
         grid.appendChild(item);
     });
+    
     document.getElementById('galleryModal').classList.remove('hidden');
     document.getElementById('galleryModal').classList.add('flex');
 }
