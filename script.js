@@ -1,17 +1,19 @@
 // --- DATA ---
-// Generación dinámica de rutas: Intentamos cargar un rango amplio.
-// El sistema ocultará automáticamente las que no existan.
-const galleryImages = [];
-
-// Generar rutas para fondos (hasta 100 por si acaso)
-for (let i = 1; i <= 100; i++) {
-    galleryImages.push(`imagenes/fondo${i}.jpg`);
-}
-
-// Generar rutas para GIFs (hasta 50 por si acaso)
-for (let i = 1; i <= 50; i++) {
-    galleryImages.push(`imagenes/gif${i}.gif`);
-}
+// Rutas de imágenes que realmente existen en la carpeta
+const galleryImages = [
+    // Fondos
+    'imagenes/fondo1.jpg', 'imagenes/fondo2.jpg', 'imagenes/fondo5.jpg', 'imagenes/fondo6.jpg', 
+    'imagenes/fondo7.jpg', 'imagenes/fondo8.jpg', 'imagenes/fondo9.jpg', 'imagenes/fondo10.jpg', 
+    'imagenes/fondo11.jpg', 'imagenes/fondo12.jpg', 'imagenes/fondo13.jpg', 'imagenes/fondo14.jpg', 
+    'imagenes/fondo15.jpg', 'imagenes/fondo16.jpg', 'imagenes/fondo17.jpg', 'imagenes/fondo18.jpg', 
+    'imagenes/fondo19.jpg', 'imagenes/fondo20.jpg', 'imagenes/fondo21.jpg', 'imagenes/fondo22.jpg', 
+    'imagenes/fondo23.jpg', 'imagenes/fondo24.jpg', 'imagenes/fondo25.jpg', 'imagenes/fondo26.jpg', 
+    'imagenes/fondo27.jpg',
+    // GIFs
+    'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif8.gif', 'imagenes/gif9.gif', 
+    'imagenes/gif11.gif', 'imagenes/gif13.gif', 'imagenes/gif14.gif', 'imagenes/gif15.gif', 
+    'imagenes/gif17.gif'
+];
 
 // --- ESTADO ---
 let slidesData = [];
@@ -949,16 +951,14 @@ function openGallery() {
         item.onclick = () => selectGalleryImage(url);
 
         const img = document.createElement('img');
+        
+        // Adjuntar eventos ANTES de setear el src para evitar que se pierdan si carga rápido (cache)
+        img.onload = () => item.classList.remove('animate-pulse');
+        img.onerror = () => item.remove();
+        
         img.src = url;
         img.loading = 'lazy';
         img.className = 'w-full h-full object-cover rounded-lg';
-        
-        // Al cargar correctamente, quitar animación de carga
-        img.onload = () => item.classList.remove('animate-pulse');
-        
-        // MODIFICADO: Si la imagen no existe (404), eliminar el item de la galería automáticamente
-        // Esto permite agregar fotos o gifs a la carpeta y que aparezcan solos
-        img.onerror = () => item.remove();
 
         item.appendChild(img);
         grid.appendChild(item);
