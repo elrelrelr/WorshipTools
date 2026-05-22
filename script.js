@@ -13,7 +13,7 @@ const galleryImages = [
     'imagenes/fondo27.jpg',
     // GIFs (Se han verificado que solo existen del 1 al 7)
     'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif3.gif', 'imagenes/gif4.gif', 
-    'imagenes/gif5.gif', 'imagenes/gif6.gif', 'imagenes/gif7.gif'
+    'imagenes/gif5.gif', 'imagenes/gif6.gif', 'imagenes/gif7.gif', 'imagenes/gif8.gif', 'imagenes/gif9.gif', 'imagenes/gif10.gif', 'imagenes/gif11.gif', 'imagenes/gif12.gif'
 ];
 
 // --- ESTADO ---
