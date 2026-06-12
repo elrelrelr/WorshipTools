@@ -110,6 +110,51 @@
             transition: transform 0.2s, background-color 0.2s;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        /* Tooltip personalizado */
+        .custom-tooltip-container .custom-tooltip {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .custom-tooltip-container:hover .custom-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .overlay-btn.title-toggle {
+            background-color: #475569; /* Slate oscuro por defecto */
+        }
+        
+        .overlay-btn.title-toggle:hover {
+            background-color: #334155;
+        }
+
+        .overlay-btn.title-toggle.active {
+            background-color: #f59e0b; /* Amber */
+            border: 2px solid white;
+        }
+
+        .overlay-btn.title-toggle.active:hover {
+            background-color: #d97706;
         }
 
         .overlay-btn:hover {
@@ -399,5 +444,117 @@
     
     .slide-preview:active {
         transform: scale(0.99);
+    }
+}
+/* TOOLTIPS PERSONALIZADOS */
+.custom-tooltip-container {
+    position: relative;
+}
+
+.custom-tooltip-container .custom-tooltip {
+    visibility: hidden;
+    background-color: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 6px 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    font-weight: normal;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.custom-tooltip-container .custom-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}
+
+.custom-tooltip-container:hover .custom-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* BOTON DE ATENUAR FONDO POR DIAPOSITIVA */
+.dim-btn {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background-color: rgba(15, 23, 42, 0.8);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 40;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.dim-btn:hover {
+    background-color: rgba(30, 41, 59, 0.95);
+    transform: scale(1.05);
+}
+.dim-btn.active-dark {
+    background-color: rgba(15, 23, 42, 0.95);
+    color: white;
+}
+.dim-btn.active-light {
+    background-color: rgba(248, 250, 252, 0.95);
+    color: #0f172a;
+}
+
+/* Tooltip lateral izquierdo */
+.custom-tooltip-container .custom-tooltip.tooltip-left {
+    bottom: 50%;
+    left: auto;
+    right: 125%;
+    transform: translateY(50%);
+}
+.custom-tooltip-container .custom-tooltip.tooltip-left::after {
+    top: 50%;
+    left: 100%;
+    margin-left: 0;
+    margin-top: -5px;
+    border-color: transparent transparent transparent rgba(15, 23, 42, 0.95);
+}
+
+/* Tooltip lateral derecho */
+.custom-tooltip-container .custom-tooltip.tooltip-right {
+    bottom: 50%;
+    left: 125%;
+    transform: translateY(50%);
+}
+.custom-tooltip-container .custom-tooltip.tooltip-right::after {
+    top: 50%;
+    left: 0%;
+    margin-left: -10px;
+    margin-top: -5px;
+    border-color: transparent rgba(15, 23, 42, 0.95) transparent transparent;
+}
+
+/* Responsividad para botones pequeños del slide-preview */
+@media (max-width: 640px) {
+    .drag-handle, .dim-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
     }
 }

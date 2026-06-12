@@ -240,6 +240,7 @@
                                     <label class="flex items-center gap-1 text-xs sm:text-sm cursor-pointer select-none text-white">
                                         <input type="checkbox" id="textShadow" onchange="updateStyles()" class="accent-blue-500"> Sombra
                                     </label>
+                                    <input type="color" id="shadowColor" value="#000000" onchange="updateStyles()" class="h-8 w-8 bg-transparent border-0 cursor-pointer rounded overflow-hidden" title="Color de Sombra">
                                 </div>
 
                                 <div class="h-px bg-slate-700 w-full my-1"></div>
@@ -307,20 +308,24 @@
                                 <i class="fa-solid fa-plus-circle"></i> Agregar al Repertorio
                             </button>
                             
-                            <button onclick="downloadPPTX()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full">
+                            <button onclick="downloadPPTX()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-powerpoint"></i> <span class="hidden sm:inline">Descargar PPTX</span>
+                                <span class="custom-tooltip">Descargar como PowerPoint</span>
                             </button>
                             
-                            <button id="btnExportPDF" onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full">
+                            <button id="btnExportPDF" onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Descargar PDF</span>
+                                <span class="custom-tooltip">Descargar como PDF</span>
                             </button>
 
-                            <button onclick="importSongFromFile()" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full">
+                            <button onclick="importSongFromFile()" class="bg-purple-600 hover:bg-purple-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-import"></i> <span class="hidden sm:inline">Importar .md</span>
+                                <span class="custom-tooltip">Importar canción guardada en Markdown</span>
                             </button>
 
-                            <button onclick="exportSongAsMarkdown()" class="bg-purple-800 hover:bg-purple-900 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full">
+                            <button onclick="exportSongAsMarkdown()" class="bg-purple-800 hover:bg-purple-900 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-export"></i> <span class="hidden sm:inline">Exportar .md</span>
+                                <span class="custom-tooltip">Exportar canción como Markdown</span>
                             </button>
                         </div>
                         <div id="loadingIndicator" class="hidden flex items-center justify-center gap-2 mt-2 text-sm text-blue-400">

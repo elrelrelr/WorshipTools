@@ -283,24 +283,50 @@ function refreshSlidesFromCurrentState() {
     
     let newSlidesData = [];
     
-    if (addBlank) newSlidesData.push(" ");
+    if (addBlank) newSlidesData.push({ text: " ", isTitle: false, bgEffect: false });
     if (addTitle) {
         const titleText = songAuthor ? `${songName}\n${songAuthor}` : songName;
-        newSlidesData.push(titleText);
+        newSlidesData.push({ text: titleText, isTitle: true, bgEffect: false });
     }
     
     if (text.trim().length > 0) {
-        const lines = text.split('\n').map(l => l.trim() === "" ? null : l.trim()).filter(l => l !== null);
+        const lines = text.split('\n').map(l => l.trim());
         
         let chunk = [];
+        let isTitleChunk = false;
+        let bgEffectChunk = false;
         for (let line of lines) {
+            if (line === "") continue;
+            
+            while (true) {
+                if (line.toUpperCase().startsWith('[TITULO]')) {
+                    isTitleChunk = true;
+                    line = line.substring(8).trim();
+                    continue;
+                }
+                if (line.toUpperCase().startsWith('[FONDO_OSCURO]') || line.toUpperCase().startsWith('[ATENUADO]')) {
+                    bgEffectChunk = 'dark';
+                    line = line.replace(/^[(FONDO_OSCURO|ATENUADO)]/i, '').trim();
+                    continue;
+                }
+                if (line.toUpperCase().startsWith('[FONDO_CLARO]')) {
+                    bgEffectChunk = 'light';
+                    line = line.substring(13).trim();
+                    continue;
+                }
+                break;
+            }
+            if (line === "") continue;
+            
             chunk.push(line);
             if (chunk.length >= maxLines) {
-                newSlidesData.push(chunk.join('\n'));
+                newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
                 chunk = [];
+                isTitleChunk = false;
+                bgEffectChunk = false;
             }
         }
-        if (chunk.length > 0) newSlidesData.push(chunk.join('\n'));
+        if (chunk.length > 0) newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
     }
     
     slidesData = newSlidesData;
@@ -481,7 +507,7 @@ function renderSlides() {
         container.innerHTML = `<div class="text-slate-500 text-center col-span-full py-12 border-2 border-dashed border-slate-700 rounded-lg bg-slate-800/50"><i class="fa-solid fa-music text-4xl mb-3 opacity-50"></i><br>Vacío</div>`;
         return;
     }
-    slidesData.forEach((text, i) => {
+    slidesData.forEach((slideObj, i) => {
         const slide = document.createElement('div');
         slide.className = 'slide-preview rounded-lg cursor-grab active:cursor-grabbing';
         slide.dataset.index = i;
@@ -492,53 +518,76 @@ function renderSlides() {
         
         const content = document.createElement('div');
         content.className = 'slide-content';
-        content.innerText = text;
+        content.innerText = slideObj.text;
 
         // Overlay de acciones
         const overlay = document.createElement('div');
         overlay.className = 'slide-overlay';
 
-        // Botón Editar
-        const btnEdit = document.createElement('button');
-        btnEdit.className = 'overlay-btn';
-        btnEdit.innerHTML = '<i class="fa-solid fa-pen"></i>';
-        btnEdit.title = "Editar Texto";
-        btnEdit.onclick = (e) => { e.stopPropagation(); openEditModal(i); };
+        const createBtn = (cls, icon, tooltip, onClick) => {
+            const btn = document.createElement('button');
+            btn.className = `overlay-btn ${cls} custom-tooltip-container`;
+            btn.innerHTML = `<i class="${icon}"></i><span class="custom-tooltip">${tooltip}</span>`;
+            btn.onclick = onClick;
+            return btn;
+        };
 
-        // Botón Agregar Vacío
-        const btnAdd = document.createElement('button');
-        btnAdd.className = 'overlay-btn add';
-        btnAdd.innerHTML = '<i class="fa-solid fa-plus"></i>';
-        btnAdd.title = "Agregar Diapositiva en Blanco Antes";
-        btnAdd.onclick = (e) => { e.stopPropagation(); addBlankSlideBefore(i); };
+        const btnTitle = createBtn(
+            `title-toggle ${slideObj.isTitle ? 'active' : ''}`, 
+            'fa-solid fa-heading', 
+            slideObj.isTitle ? "Quitar Título" : "Marcar como Título", 
+            (e) => { 
+                e.stopPropagation(); 
+                slidesData[i].isTitle = !slidesData[i].isTitle;
+                syncSlidesToLyrics();
+                renderSlides();
+            }
+        );
 
-        // Botón Eliminar
-        const btnDel = document.createElement('button');
-        btnDel.className = 'overlay-btn delete';
-        btnDel.innerHTML = '<i class="fa-solid fa-trash"></i>';
-        btnDel.title = "Eliminar Diapositiva";
-        btnDel.onclick = (e) => { e.stopPropagation(); deleteSlide(i); };
+        const btnProject = createBtn('project', 'fa-solid fa-desktop', "Proyectar Diapositiva", (e) => { e.stopPropagation(); openProjection(i); });
+        const btnEdit = createBtn('', 'fa-solid fa-pen', "Editar Texto", (e) => { e.stopPropagation(); openEditModal(i); });
+        const btnAdd = createBtn('add', 'fa-solid fa-plus', "Agregar Vacío", (e) => { e.stopPropagation(); addBlankSlideBefore(i); });
+        const btnDel = createBtn('delete', 'fa-solid fa-trash', "Eliminar Diapositiva", (e) => { e.stopPropagation(); deleteSlide(i); });
 
-        // Botón Proyectar (NUEVO)
-        const btnProject = document.createElement('button');
-        btnProject.className = 'overlay-btn project';
-        btnProject.innerHTML = '<i class="fa-solid fa-desktop"></i>';
-        btnProject.title = "Proyectar Diapositiva (Pantalla Completa)";
-        btnProject.onclick = (e) => { e.stopPropagation(); openProjection(i); };
-
-        // Botón Arrastrar (Handle)
+        // Botón Arrastrar (Handle) - MODIFICADO para tener tooltip a la izquierda
         const dragHandle = document.createElement('div');
-        dragHandle.className = 'drag-handle';
-        dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
-        dragHandle.title = "Arrastrar para reordenar";
-
+        dragHandle.className = 'drag-handle custom-tooltip-container';
+        dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i><span class="custom-tooltip tooltip-left">Arrastrar</span>';
+        
+        overlay.appendChild(btnTitle);
         overlay.appendChild(btnProject);
         overlay.appendChild(btnEdit);
         overlay.appendChild(btnAdd);
         overlay.appendChild(btnDel);
-        
+
+        const dimBtn = document.createElement('div');
+        let effectIcon = 'fa-circle-half-stroke';
+        let effectTooltip = 'Oscurecer Fondo';
+        let activeClass = '';
+        if (slideObj.bgEffect === 'dark') {
+            effectIcon = 'fa-moon';
+            effectTooltip = 'Aclarar Fondo';
+            activeClass = 'active-dark';
+        } else if (slideObj.bgEffect === 'light') {
+            effectIcon = 'fa-sun';
+            effectTooltip = 'Fondo Normal';
+            activeClass = 'active-light';
+        }
+
+        dimBtn.className = `dim-btn custom-tooltip-container ${activeClass}`;
+        dimBtn.innerHTML = `<i class="fa-solid ${effectIcon}"></i><span class="custom-tooltip tooltip-right">${effectTooltip}</span>`;
+        dimBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            if (!slidesData[i].bgEffect) slidesData[i].bgEffect = 'dark';
+            else if (slidesData[i].bgEffect === 'dark') slidesData[i].bgEffect = 'light';
+            else slidesData[i].bgEffect = false;
+            syncSlidesToLyrics();
+            renderSlides();
+        };
+
         slide.appendChild(num);
-        slide.appendChild(dragHandle); // Añadir handle
+        slide.appendChild(dragHandle);
+        slide.appendChild(dimBtn);
         slide.appendChild(content);
         slide.appendChild(overlay);
         container.appendChild(slide);
@@ -649,13 +698,17 @@ function renderProjectionSlide() {
     if (currentProjectionIndex < 0 || currentProjectionIndex >= slidesData.length) return;
     
     const content = document.getElementById('projectionContent');
-    const slideText = slidesData[currentProjectionIndex];
+    const currentSlide = slidesData[currentProjectionIndex];
+    const slideText = currentSlide ? currentSlide.text : "";
+    const isTitle = currentSlide ? currentSlide.isTitle : false;
+    const bgEffect = currentSlide ? currentSlide.bgEffect : false;
     const transparency = document.getElementById('bgTransparency').checked;
 
     // Estilos actuales
     const font = document.getElementById('fontFamily').value;
     let color = document.getElementById('textColor').value;
     const shadow = document.getElementById('textShadow').checked;
+    const shadowColor = document.getElementById('shadowColor') ? document.getElementById('shadowColor').value : '#000000';
     const isBold = document.getElementById('textBold').checked;
     const size = parseInt(document.getElementById('fontSize').value) || 55;
     const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
@@ -669,7 +722,11 @@ function renderProjectionSlide() {
     
     // Configurar Fondo
     if (bgImageData) {
-        if (transparency) {
+        if (bgEffect === 'light') {
+            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+        } else if (bgEffect === 'dark') {
+            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
+        } else if (transparency) {
             content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
         } else {
             content.style.backgroundImage = `url(${bgImageData})`;
@@ -691,7 +748,7 @@ function renderProjectionSlide() {
     textDiv.style.color = color;
     textDiv.style.textAlign = currentAlignment;
     textDiv.style.fontWeight = isBold ? 'bold' : 'normal';
-    textDiv.style.textShadow = shadow ? '3px 3px 6px rgba(0,0,0,0.8)' : 'none';
+    textDiv.style.textShadow = shadow ? `3px 3px 6px ${shadowColor}` : 'none';
     
     // CORRECCIÓN: Mejor cálculo del tamaño de fuente responsivo
     const windowWidth = window.innerWidth;
@@ -710,7 +767,8 @@ function renderProjectionSlide() {
     // Ajustar aún más basado en la altura de la pantalla
     const scaleByHeight = windowHeight / 768;
     let finalFontSize = Math.min(baseFontSize * scaleByHeight, size * 1.2);
-    finalFontSize = Math.max(24, Math.min(120, finalFontSize));
+    if (isTitle) finalFontSize *= 1.1;
+    finalFontSize = Math.max(24, Math.min(isTitle ? 132 : 120, finalFontSize));
     
     textDiv.style.fontSize = `${finalFontSize}px`;
     
@@ -821,7 +879,7 @@ function deleteSlide(index) {
 }
 
 function addBlankSlideBefore(index) {
-    slidesData.splice(index, 0, " ");
+    slidesData.splice(index, 0, { text: " ", isTitle: false, bgEffect: false });
     // Si agregamos manualmente, desactivamos opciones automáticas
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
@@ -832,35 +890,34 @@ function addBlankSlideBefore(index) {
 
 // Sincroniza los cambios manuales de la vista previa de vuelta al área de texto
 function syncSlidesToLyrics() {
-    // Al sincronizar manualmente (reordenar, editar, etc), 
-    // filtramos las diapositivas que se generan AUTOMÁTICAMENTE por el procesador (Título y Portada)
-    // para evitar duplicarlas cuando el usuario vuelva a presionar "Procesar".
-    
     let lyricsToSync = [...slidesData];
     
-    // Si la primera diapositiva coincide con el Nombre/Autor actual, es probable que sea la de título automática
     const currentName = toTitleCase(document.getElementById('songName').value || "Título");
     const currentAuth = toTitleCase(document.getElementById('songAuthor').value || "");
-    const titleText = `${currentName}\n${currentAuth}`;
+    const titleText = currentAuth ? `${currentName}\n${currentAuth}` : currentName;
     
-    // Solo removemos si están activas las opciones automáticas, indicando que queremos que el textarea
-    // sea solo la letra "pura".
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
     
     if (addTitle && lyricsToSync.length > 0) {
-        // Buscamos si la de título está al inicio (considerando el blanco opcional)
         const possibleTitleIndex = addBlank ? 1 : 0;
-        if (lyricsToSync[possibleTitleIndex] === titleText || lyricsToSync[possibleTitleIndex] === currentName) {
+        const slide = lyricsToSync[possibleTitleIndex];
+        if (slide && slide.isTitle && (slide.text === titleText || slide.text === currentName)) {
             lyricsToSync.splice(possibleTitleIndex, 1);
         }
     }
-    if (addBlank && lyricsToSync.length > 0 && lyricsToSync[0].trim() === "") {
+    if (addBlank && lyricsToSync.length > 0 && lyricsToSync[0].text.trim() === "") {
         lyricsToSync.splice(0, 1);
     }
 
-    // Unir con doble salto de línea
-    document.getElementById('lyricsInput').value = lyricsToSync.join('\n\n');
+    const textArray = lyricsToSync.map(s => {
+        let prefix = "";
+        if (s.isTitle) prefix += "[TITULO]\n";
+        if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
+        if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        return prefix + s.text;
+    });
+    document.getElementById('lyricsInput').value = textArray.join('\n\n');
 }
 
 function updateStyles() {
@@ -1011,7 +1068,7 @@ async function selectGalleryImage(url) {
 function openEditModal(i) {
     currentEditingIndex = i;
     document.getElementById('editModalIndex').innerText = `#${i + 1}`;
-    document.getElementById('editSlideText').value = slidesData[i];
+    document.getElementById('editSlideText').value = slidesData[i].text;
     document.getElementById('editModal').classList.remove('hidden');
     document.getElementById('editModal').classList.add('flex');
 }
@@ -1023,7 +1080,7 @@ function closeEditModal() {
 
 function saveEditSlide() {
     if (currentEditingIndex > -1) {
-        slidesData[currentEditingIndex] = document.getElementById('editSlideText').value;
+        slidesData[currentEditingIndex].text = document.getElementById('editSlideText').value;
         // Al editar manualmente, desactivamos las opciones automáticas 
         // para que el textarea refleje exactamente el cambio y no se dupliquen al procesar
         document.getElementById('addBlankSlide').checked = false;
@@ -1055,12 +1112,17 @@ function renderQuickCopyList() {
         list.innerHTML = '<p class="text-slate-500 text-center text-sm mt-10">Sin datos.</p>';
         return;
     }
-    slidesData.forEach((text, i) => {
+    slidesData.forEach((slideObj, i) => {
+        const text = slideObj.text;
         const item = document.createElement('div');
         item.className = 'copy-block bg-slate-800 border border-slate-700 rounded-lg p-3 flex justify-between items-center group';
         const txtPreview = document.createElement('div');
         txtPreview.className = 'text-xs text-slate-300 font-mono whitespace-pre truncate mr-2 flex-1';
-        txtPreview.innerText = text.replace(/\n/g, ' ↵ ');
+        let prefix = '';
+        if (slideObj.isTitle) prefix += '[TITULO] ';
+        if (slideObj.bgEffect === 'dark') prefix += '[OSCURO] ';
+        if (slideObj.bgEffect === 'light') prefix += '[CLARO] ';
+        txtPreview.innerText = prefix + text.replace(/\n/g, ' ↵ ');
         const btn = document.createElement('button');
         btn.className = 'bg-slate-700 hover:bg-blue-600 text-white p-2 rounded transition shadow-sm shrink-0';
         btn.innerHTML = `<i class="fa-regular fa-copy"></i>`;
@@ -1217,13 +1279,19 @@ function loadFromRepertoire(index) {
     }
 
     // Cargar letra (slides)
-    // Usamos las diapositivas guardadas y las unimos con doble salto de línea
-    // Pero primero filtramos las que son automáticas (Título/Blanco) si es que están guardadas ahí
-    let slidesToLoad = [...song.slides];
+    let slidesToLoad = song.slides.map(s => {
+        if (typeof s === 'string') return { text: s, isTitle: false };
+        return { ...s };
+    });
     
-    // El sync ya debería haber limpiado la letra antes de guardar, 
-    // pero por seguridad las unimos y dejamos que processLyrics haga su magia
-    document.getElementById('lyricsInput').value = slidesToLoad.join('\n\n');
+    const textArray = slidesToLoad.map(s => {
+        let prefix = "";
+        if (s.isTitle) prefix += "[TITULO]\n";
+        if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
+        if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        return prefix + s.text;
+    });
+    document.getElementById('lyricsInput').value = textArray.join('\n\n');
 
     // Resetear opciones automáticas para que no se dupliquen al procesar
     document.getElementById('addBlankSlide').checked = false;
@@ -1313,13 +1381,17 @@ async function downloadSetlist() {
 
             // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
             for (let i = 0; i < song.slides.length; i++) {
-                let text = song.slides[i].trim() || " ";
+                const slideObj = song.slides[i];
+                let text = (typeof slideObj === 'string' ? slideObj : slideObj.text).trim() || " ";
+                const isTitle = typeof slideObj === 'string' ? false : slideObj.isTitle;
+                let slideFontSize = isTitle ? Math.min(st.size * 1.1, 132) : st.size;
+                
                 let slide = pptx.addSlide({ masterName: masterName });
 
                 slide.addText(text, {
                     x: 0.5, y: 0.5, w: '90%', h: '80%',
                     fontFace: fontName,
-                    fontSize: st.size,
+                    fontSize: slideFontSize,
                     color: st.color,
                     bold: st.bold,
                     align: alignMap[st.align] || 'center',
@@ -1397,18 +1469,25 @@ async function downloadPPTX() {
         const alignMap = { 'left': 'left', 'center': 'center', 'right': 'right' };
         const vAlignMap = { 'top': 'top', 'center': 'middle', 'bottom': 'bottom' };
         const shadow = document.getElementById('textShadow').checked;
+        const shadowColor = document.getElementById('shadowColor') ? document.getElementById('shadowColor').value.replace('#', '') : '000000';
         const isBold = document.getElementById('textBold').checked;
-        const shadowOpts = shadow ? { type: 'outer', angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
+        const shadowOpts = shadow ? { type: 'outer', color: shadowColor, angle: 45, blur: 3, offset: 2, opacity: 0.6 } : null;
 
-        for (let rawText of slidesData) {
-            let text = rawText.trim() || " ";
-            // Aplicar el master a cada slide
+        for (let rawSlide of slidesData) {
+            let text = rawSlide.text.trim() || " ";
+            let slideFontSize = rawSlide.isTitle ? Math.min(fontSize * 1.1, 132) : fontSize;
             let slide = pptx.addSlide({ masterName: masterName });
+
+            if (rawSlide.bgEffect === 'dark') {
+                slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 70 } });
+            } else if (rawSlide.bgEffect === 'light') {
+                slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: 'FFFFFF', transparency: 20 } });
+            }
 
             slide.addText(text, {
                 x: 0.5, y: 0.5, w: '90%', h: '80%',
                 fontFace: fontName,
-                fontSize: fontSize,
+                fontSize: slideFontSize,
                 color: fontColor,
                 bold: isBold,
                 align: alignMap[currentAlignment] || 'center',
@@ -1457,19 +1536,26 @@ async function exportToPDF() {
         const isBold = document.getElementById('textBold').checked;
         const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
 
+        const shadowColor = document.getElementById('shadowColor') ? document.getElementById('shadowColor').value : '#000000';
         for (let i = 0; i < slidesData.length; i++) {
             container.innerHTML = '';
+            const slideObj = slidesData[i];
+            const slideSize = slideObj.isTitle ? (parseInt(size) * 1.1) + 'px' : size;
             const slide = document.createElement('div');
             slide.style.width = '100%'; slide.style.height = '100%';
             slide.style.display = 'flex'; slide.style.padding = '50px'; slide.style.boxSizing = 'border-box';
-            slide.style.fontFamily = font; slide.style.fontSize = size;
+            slide.style.fontFamily = font; slide.style.fontSize = slideSize;
             slide.style.fontWeight = isBold ? 'bold' : 'normal';
             slide.style.color = color; slide.style.textAlign = currentAlignment;
             slide.style.justifyContent = 'center'; slide.style.alignItems = vAlignMap[currentVerticalAlignment];
-            if (shadow) slide.style.textShadow = '5px 5px 8px rgba(0,0,0,0.85)';
+            if (shadow) slide.style.textShadow = `5px 5px 8px ${shadowColor}`;
             const transparency = document.getElementById('bgTransparency').checked;
             if (bgImageData) {
-                if (transparency) {
+                if (slideObj.bgEffect === 'light') {
+                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+                } else if (slideObj.bgEffect === 'dark') {
+                    slide.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
+                } else if (transparency) {
                     slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
                 } else {
                     slide.style.backgroundImage = `url(${bgImageData})`;
@@ -1479,7 +1565,7 @@ async function exportToPDF() {
             } else {
                 slide.style.backgroundColor = 'white';
             }
-            slide.innerHTML = slidesData[i].replace(/\n/g, '<br>');
+            slide.innerHTML = slideObj.text.replace(/\n/g, '<br>');
             container.appendChild(slide);
             await new Promise(r => setTimeout(r, 10));
             const canvas = await html2canvas(slide, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: null });
@@ -1932,24 +2018,32 @@ function exportSongAsMarkdown() {
     // La letra (usando slidesData para preservar la estructura exacta)
     if (slidesData.length > 0) {
         // Filtrar la portada y slide vacío si están marcados como automáticos
-        let lyricsToExport = [...slidesData];
+        let lyricsToExport = slidesData.map(s => ({...s}));
         
         // Si la portada está activada automáticamente, la removemos del texto de letra
         if (addTitle && lyricsToExport.length > 0) {
             const titleText = author ? `${cleanName}\n${author}` : cleanName;
             const blankIndex = addBlank ? 1 : 0;
-            if (lyricsToExport[blankIndex] === titleText || lyricsToExport[blankIndex] === cleanName) {
+            const slide = lyricsToExport[blankIndex];
+            if (slide && slide.isTitle && (slide.text === titleText || slide.text === cleanName)) {
                 lyricsToExport.splice(blankIndex, 1);
             }
         }
         
         // Si el slide vacío está activado automáticamente, lo removemos
-        if (addBlank && lyricsToExport.length > 0 && lyricsToExport[0].trim() === "") {
+        if (addBlank && lyricsToExport.length > 0 && lyricsToExport[0].text.trim() === "") {
             lyricsToExport.splice(0, 1);
         }
         
         // Unir con doble salto de línea para preservar la estructura de diapositivas
-        markdown += lyricsToExport.join('\n\n');
+        const textArray = lyricsToExport.map(s => {
+            let prefix = "";
+            if (s.isTitle) prefix += "[TITULO]\n";
+            if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
+            if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+            return prefix + s.text;
+        });
+        markdown += textArray.join('\n\n');
     } else {
         // Fallback al textarea
         const lyrics = document.getElementById('lyricsInput').value.trim();
