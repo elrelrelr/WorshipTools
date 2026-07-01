@@ -19,8 +19,16 @@ const galleryImages = [
 // --- ESTADO ---
 let slidesData = [];
 let bgImageData = null;
+let bgRegistry = {}; // { id: "base64data" }
+let nextBgId = 1;
+
 let currentEditingIndex = -1;
 let currentProjectionIndex = -1;
+
+// Selección y Deshacer
+let selectedSlides = new Set();
+let historyStack = [];
+let selectionMode = false;
 
 let currentAlignment = 'center';
 let currentVerticalAlignment = 'center';
@@ -312,6 +320,7 @@ function refreshSlidesFromCurrentState() {
         let chunk = [];
         let isTitleChunk = false;
         let bgEffectChunk = false;
+        let bgImageIdChunk = null;
         for (let line of lines) {
             if (line === "") continue;
             
@@ -342,6 +351,14 @@ function refreshSlidesFromCurrentState() {
                     line = line.substring(7).trim();
                     continue;
                 }
+                if (line.toUpperCase().startsWith('[FONDO:')) {
+                    const match = line.match(/^\[FONDO:([^\]]+)\]/i);
+                    if (match) {
+                        bgImageIdChunk = match[1];
+                        line = line.substring(match[0].length).trim();
+                        continue;
+                    }
+                }
                 break;
             }
             
@@ -354,12 +371,13 @@ function refreshSlidesFromCurrentState() {
                             }
                         }
                     }
-                    newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+                    newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk, bgImageId: bgImageIdChunk });
                     chunk = [];
                 }
-                newSlidesData.push({ text: " ", isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+                newSlidesData.push({ text: " ", isTitle: isTitleChunk, bgEffect: bgEffectChunk, bgImageId: bgImageIdChunk });
                 isTitleChunk = false;
                 bgEffectChunk = false;
+                bgImageIdChunk = null;
                 if (line === "") continue;
             }
             
@@ -374,10 +392,11 @@ function refreshSlidesFromCurrentState() {
                         }
                     }
                 }
-                newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+                newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk, bgImageId: bgImageIdChunk });
                 chunk = [];
                 isTitleChunk = false;
                 bgEffectChunk = false;
+                bgImageIdChunk = null;
             }
         }
         if (chunk.length > 0) {
@@ -388,7 +407,7 @@ function refreshSlidesFromCurrentState() {
                     }
                 }
             }
-            newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+            newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk, bgImageId: bgImageIdChunk });
         }
     }
     
@@ -444,13 +463,20 @@ function cleanAndCorrectLyrics() {
         return true;
     });
 
-    // 3. Limpieza de cada línea
+    // 3. Limpieza de cada línea (solo capitaliza primera línea de cada estrofa)
+    let prevLineEmpty = true;
     lines = lines.map(line => {
         let l = line.trim();
-        if (!l) return "";
+        if (!l) {
+            prevLineEmpty = true;
+            return "";
+        }
 
-        // Capitalizar primera letra de la línea
-        l = l.charAt(0).toUpperCase() + l.slice(1);
+        // Solo capitalizar si es la primera línea después de un salto (inicio de estrofa)
+        if (prevLineEmpty) {
+            l = l.charAt(0).toUpperCase() + l.slice(1);
+        }
+        prevLineEmpty = false;
 
         // Eliminar puntuación final innecesaria para diapositivas
         l = l.replace(/[,.;]$/, "");
@@ -578,6 +604,26 @@ function renderSlides() {
         const content = document.createElement('div');
         content.className = 'slide-content';
         content.innerText = slideObj.text;
+        
+        // Multi-select checkbox (visible only in selection mode or when selected)
+        const checkboxWrap = document.createElement('div');
+        checkboxWrap.className = 'slide-checkbox-wrap';
+        checkboxWrap.innerHTML = `<input type="checkbox" class="slide-checkbox accent-blue-600 cursor-pointer shadow-sm rounded" ${selectedSlides.has(i) ? 'checked' : ''}>`;
+        checkboxWrap.onclick = (e) => {
+            e.stopPropagation();
+            toggleSlideSelection(i);
+        };
+        slide.appendChild(checkboxWrap);
+        if (selectedSlides.has(i)) {
+            slide.classList.add('selected-slide', 'ring-2', 'ring-blue-500');
+        }
+
+        // Click on the slide itself toggles selection when in selection mode
+        slide.addEventListener('click', function(e) {
+            if (selectionMode) {
+                toggleSlideSelection(i);
+            }
+        });
 
         // Overlay de acciones
         const overlay = document.createElement('div');
@@ -603,8 +649,13 @@ function renderSlides() {
             }
         );
 
-        const btnProject = createBtn('project', 'fa-solid fa-desktop', "Proyectar Diapositiva", (e) => { e.stopPropagation(); openProjection(i); });
-        const btnEdit = createBtn('', 'fa-solid fa-pen', "Editar Texto", (e) => { e.stopPropagation(); openEditModal(i); });
+        const btnProject = createBtn('project', 'fa-solid fa-desktop', "Proyectar", (e) => { e.stopPropagation(); openProjection(i); });
+        const btnEdit = createBtn('', 'fa-solid fa-pen', "Editar", (e) => { e.stopPropagation(); openEditModal(i); });
+        const btnBg = createBtn('bg-individual', 'fa-solid fa-image', "Fondo propio", (e) => { 
+            e.stopPropagation(); 
+            window.targetBgSlideIndex = i;
+            openGallery('individual');
+        });
         const btnAdd = createBtn('add', 'fa-solid fa-plus', "Agregar Vacío", (e) => { e.stopPropagation(); addBlankSlideBefore(i); });
         const btnDel = createBtn('delete', 'fa-solid fa-trash', "Eliminar Diapositiva", (e) => { e.stopPropagation(); deleteSlide(i); });
 
@@ -613,9 +664,16 @@ function renderSlides() {
         dragHandle.className = 'drag-handle custom-tooltip-container';
         dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i><span class="custom-tooltip tooltip-left">Arrastrar</span>';
         
+        // Per-slide background check - show indicator if this slide has its own bg
+        const hasOwnBg = slideObj.bgImageId && bgRegistry[slideObj.bgImageId];
+        if (hasOwnBg) {
+            slide.classList.add('own-bg');
+        }
+
         overlay.appendChild(btnTitle);
         overlay.appendChild(btnProject);
         overlay.appendChild(btnEdit);
+        overlay.appendChild(btnBg);
         overlay.appendChild(btnAdd);
         overlay.appendChild(btnDel);
 
@@ -644,11 +702,25 @@ function renderSlides() {
             renderSlides();
         };
 
-        slide.appendChild(num);
+        overlay.appendChild(dimBtn);
+
         slide.appendChild(dragHandle);
-        slide.appendChild(dimBtn);
         slide.appendChild(content);
         slide.appendChild(overlay);
+        // Apply per-slide background if this slide has its own bgImageId
+        if (slideObj.bgImageId && bgRegistry[slideObj.bgImageId]) {
+            const bgData = bgRegistry[slideObj.bgImageId];
+            if (slideObj.bgEffect === 'light') {
+                slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgData})`;
+            } else if (slideObj.bgEffect === 'dark') {
+                slide.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgData})`;
+            } else {
+                slide.style.backgroundImage = `url(${bgData})`;
+            }
+            slide.style.backgroundSize = 'cover';
+            slide.style.backgroundPosition = 'center';
+            slide.style.backgroundColor = 'transparent';
+        }
         container.appendChild(slide);
     });
     updateStyles();
@@ -779,16 +851,20 @@ function renderProjectionSlide() {
     content.style.backgroundPosition = 'center';
     content.style.backgroundRepeat = 'no-repeat';
     
-    // Configurar Fondo
-    if (bgImageData) {
+    // Configurar Fondo (check per-slide bgImageId first)
+    let bgToUse = bgImageData;
+    if (currentSlide.bgImageId && bgRegistry[currentSlide.bgImageId]) {
+        bgToUse = bgRegistry[currentSlide.bgImageId];
+    }
+    if (bgToUse) {
         if (bgEffect === 'light') {
-            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgToUse})`;
         } else if (bgEffect === 'dark') {
-            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
+            content.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgToUse})`;
         } else if (transparency) {
-            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+            content.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgToUse})`;
         } else {
-            content.style.backgroundImage = `url(${bgImageData})`;
+            content.style.backgroundImage = `url(${bgToUse})`;
         }
         content.style.backgroundColor = 'transparent';
     } else {
@@ -928,23 +1004,37 @@ document.addEventListener('keydown', (e) => {
 });
 
 function deleteSlide(index) {
+    // Save to undo history
+    const deletedSlide = { ...slidesData[index] };
+    historyStack.push({
+        type: 'deleteSingle',
+        data: { index: index, slide: deletedSlide },
+        description: `Eliminar diapositiva #${index + 1}`
+    });
+
     slidesData.splice(index, 1);
-    // Si borramos, también desactivamos opciones automáticas para mantener sincronía total
+    selectedSlides.delete(index);
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
     syncSlidesToLyrics();
     renderSlides();
     renderQuickCopyList();
+    updateActionBar();
 }
 
 function addBlankSlideBefore(index) {
     slidesData.splice(index, 0, { text: " ", isTitle: false, bgEffect: false });
-    // Si agregamos manualmente, desactivamos opciones automáticas
+    historyStack.push({
+        type: 'addBlank',
+        data: { index: index },
+        description: `Agregar slide vacío en #${index + 1}`
+    });
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
     syncSlidesToLyrics();
     renderSlides();
     renderQuickCopyList();
+    updateActionBar();
 }
 
 // Sincroniza los cambios manuales de la vista previa de vuelta al área de texto
@@ -956,6 +1046,7 @@ function syncSlidesToLyrics() {
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
         
         let slideText = s.text.trim();
         if (slideText === "") {
@@ -999,18 +1090,24 @@ function updateStyles() {
     if (currentVerticalAlignment === 'bottom') document.getElementById('btnVAlignBottom').classList.add(btnBg);
 
     document.querySelectorAll('.slide-preview').forEach(slide => {
-        const transparency = document.getElementById('bgTransparency').checked;
-        if (bgImageData) {
-            if (transparency) {
-                slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+        const idx = parseInt(slide.dataset.index);
+        const slideObj = slidesData[idx];
+        // Skip if this slide has its own individual background (bgImageId)
+        const hasOwnBg = slideObj && slideObj.bgImageId && bgRegistry[slideObj.bgImageId];
+        if (!hasOwnBg) {
+            const transparency = document.getElementById('bgTransparency').checked;
+            if (bgImageData) {
+                if (transparency) {
+                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+                } else {
+                    slide.style.backgroundImage = `url(${bgImageData})`;
+                }
+                slide.style.backgroundSize = 'cover';
+                slide.style.backgroundPosition = 'center';
             } else {
-                slide.style.backgroundImage = `url(${bgImageData})`;
+                slide.style.backgroundColor = 'white';
+                slide.style.backgroundImage = 'none';
             }
-            slide.style.backgroundSize = 'cover';
-            slide.style.backgroundPosition = 'center';
-        } else {
-            slide.style.backgroundColor = 'white';
-            slide.style.backgroundImage = 'none';
         }
         const content = slide.querySelector('.slide-content');
         if (content) {
@@ -1050,7 +1147,10 @@ function removeBackground() {
 }
 
 // --- GALERÍA & MODALES ---
-function openGallery() {
+let galleryMode = 'global'; // 'global' | 'individual' | 'multi'
+
+function openGallery(mode) {
+    galleryMode = mode || 'global';
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
     console.log("Cargando galería con " + galleryImages.length + " imágenes...");
@@ -1089,6 +1189,19 @@ function openGallery() {
 function closeGallery() {
     document.getElementById('galleryModal').classList.add('hidden');
     document.getElementById('galleryModal').classList.remove('flex');
+    galleryMode = 'global';
+}
+
+function galleryUploadFromPC() {
+    const prevMode = galleryMode;
+    closeGallery();
+    if (prevMode === 'global') {
+        // Upload as global background
+        document.getElementById('bgImageInput').click();
+    } else {
+        // Upload for individual/multi slides
+        document.getElementById('individualBgImageInput').click();
+    }
 }
 
 async function selectGalleryImage(url) {
@@ -1101,8 +1214,30 @@ async function selectGalleryImage(url) {
         const blob = await response.blob();
         const reader = new FileReader();
         reader.onloadend = () => {
-            bgImageData = reader.result;
-            updateStyles();
+            const dataUrl = reader.result;
+            if (galleryMode === 'individual' && window.targetBgSlideIndex !== undefined) {
+                // Assign to specific slide
+                const bgId = `gallery_${nextBgId++}`;
+                bgRegistry[bgId] = dataUrl;
+                slidesData[window.targetBgSlideIndex].bgImageId = bgId;
+                syncSlidesToLyrics();
+                renderSlides();
+            } else if (galleryMode === 'multi' && selectedSlides.size > 0) {
+                // Assign to all selected slides
+                const bgId = `gallery_${nextBgId++}`;
+                bgRegistry[bgId] = dataUrl;
+                for (let idx of selectedSlides) {
+                    if (idx >= 0 && idx < slidesData.length) {
+                        slidesData[idx].bgImageId = bgId;
+                    }
+                }
+                syncSlidesToLyrics();
+                renderSlides();
+            } else {
+                // Default: global background
+                bgImageData = dataUrl;
+                updateStyles();
+            }
             document.getElementById('globalLoader').classList.add('hidden');
             document.getElementById('globalLoader').classList.remove('flex');
         };
@@ -1212,11 +1347,20 @@ function addToRepertoire() {
         songName = "Canción Sin Nombre";
     }
 
+    // Save snapshot of bgRegistry entries referenced by this song's slides
+    let songBgRegistry = {};
+    for (let s of slidesData) {
+        if (s.bgImageId && bgRegistry[s.bgImageId]) {
+            songBgRegistry[s.bgImageId] = bgRegistry[s.bgImageId];
+        }
+    }
+
     const songConfig = {
         id: Date.now(),
         type: 'internal',
-        name: songName,  // Ahora usa el nombre limpio, no la etiqueta
+        name: songName,
         slides: [...slidesData],
+        bgRegistrySnapshot: songBgRegistry,
         styles: {
             font: document.getElementById('fontFamily').value,
             size: parseInt(document.getElementById('fontSize').value),
@@ -1327,6 +1471,10 @@ function loadFromRepertoire(index) {
         bgImageData = st.bgImage;
         document.getElementById('bgTransparency').checked = st.bgTransparency || false;
     }
+    // Restore per-slide backgrounds
+    if (song.bgRegistrySnapshot) {
+        Object.assign(bgRegistry, song.bgRegistrySnapshot);
+    }
 
     // Cargar letra (slides)
     let slidesToLoad = song.slides.map(s => {
@@ -1339,6 +1487,7 @@ function loadFromRepertoire(index) {
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
         
         let slideText = s.text.trim();
         if (slideText === "") {
@@ -1397,6 +1546,15 @@ function sendAllRepertoireToEditor() {
         if (!confirm("Esto reemplazará la canción actual en el editor por todo el repertorio. ¿Continuar?")) return;
     }
     
+    // Merge bgRegistry from all songs
+    let mergedBgRegistry = {};
+    repertoireList.forEach(song => {
+        if (song.bgRegistrySnapshot) {
+            Object.assign(mergedBgRegistry, song.bgRegistrySnapshot);
+        }
+    });
+    Object.assign(bgRegistry, mergedBgRegistry);
+
     let allSlides = [];
     repertoireList.forEach(song => {
         let slidesToLoad = song.slides.map(s => {
@@ -1411,6 +1569,7 @@ function sendAllRepertoireToEditor() {
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
         
         let slideText = s.text.trim();
         if (slideText === "") {
@@ -1545,22 +1704,34 @@ async function downloadPPTX() {
         pptx.layout = 'WIDE';
 
         // DEFINIR MASTER PARA ESTA PRESENTACIÓN (Soluciona corrupción y fallas en 2da slide)
-        const masterName = "GLOBAL_BG_MASTER";
-        let masterObj = { title: masterName, objects: [] };
-
-        if (bgImageData) {
-            masterObj.objects.push({ 
-                image: { x: 0, y: 0, w: 10, h: 5.625, data: bgImageData, sizing: { type: 'cover' } } 
-            });
-            if (document.getElementById('bgTransparency').checked) {
-                masterObj.objects.push({ 
-                    rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+        let mastersCreated = {};
+        
+        function defineMaster(bgId, dataUrl) {
+            const mName = bgId ? `MASTER_${bgId}` : "GLOBAL_BG_MASTER";
+            if (mastersCreated[mName]) return mName;
+            
+            let mObj = { title: mName, objects: [] };
+            if (dataUrl) {
+                mObj.objects.push({ 
+                    image: { x: 0, y: 0, w: 10, h: 5.625, data: dataUrl, sizing: { type: 'cover' } } 
                 });
+                if (document.getElementById('bgTransparency').checked) {
+                    mObj.objects.push({ 
+                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+                    });
+                }
+            } else {
+                mObj.background = { color: 'FFFFFF' };
             }
-        } else {
-            masterObj.background = { color: 'FFFFFF' };
+            pptx.defineSlideMaster(mObj);
+            mastersCreated[mName] = true;
+            return mName;
         }
-        pptx.defineSlideMaster(masterObj);
+
+        const globalMaster = defineMaster(null, bgImageData);
+        for (let key in bgRegistry) {
+            defineMaster(key, bgRegistry[key]);
+        }
 
         const fontSelect = document.getElementById('fontFamily').value;
         const fontName = getFontFamilyName(fontSelect);
@@ -1576,7 +1747,11 @@ async function downloadPPTX() {
         for (let rawSlide of slidesData) {
             let text = rawSlide.text.trim() || " ";
             let slideFontSize = rawSlide.isTitle ? Math.min(fontSize * 1.1, 132) : fontSize;
-            let slide = pptx.addSlide({ masterName: masterName });
+            let slideMaster = globalMaster;
+            if (rawSlide.bgImageId && mastersCreated[`MASTER_${rawSlide.bgImageId}`]) {
+                slideMaster = `MASTER_${rawSlide.bgImageId}`;
+            }
+            let slide = pptx.addSlide({ masterName: slideMaster });
 
             if (rawSlide.bgEffect === 'dark') {
                 slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 70 } });
@@ -1650,15 +1825,21 @@ async function exportToPDF() {
             slide.style.justifyContent = 'center'; slide.style.alignItems = vAlignMap[currentVerticalAlignment];
             if (shadow) slide.style.textShadow = `5px 5px 8px ${shadowColor}`;
             const transparency = document.getElementById('bgTransparency').checked;
-            if (bgImageData) {
+            
+            let bgDataToUse = bgImageData;
+            if (slideObj.bgImageId && bgRegistry[slideObj.bgImageId]) {
+                bgDataToUse = bgRegistry[slideObj.bgImageId];
+            }
+
+            if (bgDataToUse) {
                 if (slideObj.bgEffect === 'light') {
-                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgDataToUse})`;
                 } else if (slideObj.bgEffect === 'dark') {
-                    slide.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgImageData})`;
+                    slide.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgDataToUse})`;
                 } else if (transparency) {
-                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgImageData})`;
+                    slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgDataToUse})`;
                 } else {
-                    slide.style.backgroundImage = `url(${bgImageData})`;
+                    slide.style.backgroundImage = `url(${bgDataToUse})`;
                 }
                 slide.style.backgroundSize = 'cover';
                 slide.style.backgroundPosition = 'center';
@@ -2374,3 +2555,169 @@ function hideGlobalLoader() {
         loader.classList.remove('flex');
     }
 }
+
+// --- PER-SLIDE / MULTI-SELECT BACKGROUND ---
+function handleIndividualBgUpload(input) {
+    if (!input.files || !input.files[0]) return;
+
+    // Check if we're in multi-select mode (from action bar or individual selection)
+    if (selectedSlides.size > 0) {
+        // Apply to all selected slides
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            const bgId = `indiv_${nextBgId++}`;
+            bgRegistry[bgId] = dataUrl;
+            for (let idx of selectedSlides) {
+                if (idx >= 0 && idx < slidesData.length) {
+                    slidesData[idx].bgImageId = bgId;
+                }
+            }
+            syncSlidesToLyrics();
+            renderSlides();
+        };
+        reader.readAsDataURL(input.files[0]);
+        input.value = "";
+        return;
+    }
+
+    // Single slide mode (from hover overlay)
+    const targetIndex = window.targetBgSlideIndex;
+    if (targetIndex === undefined || targetIndex < 0 || targetIndex >= slidesData.length) {
+        alert("Selecciona primero una diapositiva (usa el botón Fondo en el hover).");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const bgId = `indiv_${nextBgId++}`;
+        bgRegistry[bgId] = dataUrl;
+        slidesData[targetIndex].bgImageId = bgId;
+        syncSlidesToLyrics();
+        renderSlides();
+    };
+    reader.readAsDataURL(input.files[0]);
+    input.value = "";
+}
+
+// --- MULTI-SELECT FUNCTIONS ---
+function toggleSlideSelection(index) {
+    const slide = document.querySelector(`.slide-preview[data-index="${index}"]`);
+    const checkbox = slide ? slide.querySelector('.slide-checkbox') : null;
+    if (selectedSlides.has(index)) {
+        selectedSlides.delete(index);
+        if (slide) slide.classList.remove('selected-slide', 'ring-2', 'ring-blue-500');
+        if (checkbox) checkbox.checked = false;
+    } else {
+        selectedSlides.add(index);
+        if (slide) slide.classList.add('selected-slide', 'ring-2', 'ring-blue-500');
+        if (checkbox) checkbox.checked = true;
+    }
+    updateActionBar();
+}
+
+function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    const btn = document.getElementById('btnSelectionMode');
+    const container = document.getElementById('slidesContainer');
+    if (selectionMode) {
+        btn.classList.remove('bg-green-600', 'hover:bg-green-700', 'border-green-500');
+        btn.classList.add('bg-red-600', 'hover:bg-red-700', 'border-red-500');
+        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> <span class="hidden sm:inline">Cancelar</span>';
+        container.classList.add('selection-mode');
+        // Show checkboxes
+        document.querySelectorAll('.slide-checkbox-wrap').forEach(w => w.classList.add('visible'));
+    } else {
+        btn.classList.remove('bg-red-600', 'hover:bg-red-700', 'border-red-500');
+        btn.classList.add('bg-green-600', 'hover:bg-green-700', 'border-green-500');
+        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> <span class="hidden sm:inline">Seleccionar</span>';
+        container.classList.remove('selection-mode');
+        clearSelection();
+        // Hide checkboxes
+        document.querySelectorAll('.slide-checkbox-wrap').forEach(w => w.classList.remove('visible'));
+    }
+}
+
+function updateActionBar() {
+    const bar = document.getElementById('multiSelectActionBar');
+    const countSpan = document.getElementById('selectedCount');
+    const undoBtn = document.getElementById('btnUndo');
+    if (selectedSlides.size > 0) {
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+        countSpan.innerText = `${selectedSlides.size} seleccionada(s)`;
+    } else {
+        bar.classList.add('hidden');
+        bar.classList.remove('flex');
+    }
+    undoBtn.disabled = historyStack.length === 0;
+}
+
+function clearSelection() {
+    selectedSlides.clear();
+    document.querySelectorAll('.slide-preview').forEach(s => {
+        s.classList.remove('selected-slide', 'ring-2', 'ring-blue-500');
+        const cb = s.querySelector('.slide-checkbox');
+        if (cb) cb.checked = false;
+    });
+    updateActionBar();
+}
+
+function deleteSelectedSlides() {
+    if (selectedSlides.size === 0) return;
+    if (!confirm(`¿Eliminar ${selectedSlides.size} diapositiva(s) seleccionada(s)?`)) return;
+
+    // Save to undo history
+    const indices = Array.from(selectedSlides).sort((a, b) => b - a);
+    const deletedSlides = indices.map(i => ({ index: i, slide: { ...slidesData[i] } }));
+    historyStack.push({
+        type: 'deleteMultiple',
+        data: deletedSlides,
+        description: `Eliminar ${deletedSlides.length} diapositiva(s)`
+    });
+
+    // Remove from highest index to lowest to avoid index shifting
+    for (let idx of indices) {
+        slidesData.splice(idx, 1);
+    }
+    clearSelection();
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
+    syncSlidesToLyrics();
+    renderSlides();
+    renderQuickCopyList();
+    updateActionBar();
+}
+
+function undoAction() {
+    if (historyStack.length === 0) return;
+    const action = historyStack.pop();
+
+    if (action.type === 'deleteMultiple') {
+        // Restore deleted slides at their original positions
+        for (let item of action.data) {
+            slidesData.splice(item.index, 0, item.slide);
+        }
+    } else if (action.type === 'deleteSingle') {
+        slidesData.splice(action.data.index, 0, action.data.slide);
+    } else if (action.type === 'addBlank') {
+        slidesData.splice(action.data.index, 1);
+    }
+
+    clearSelection();
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
+    syncSlidesToLyrics();
+    renderSlides();
+    renderQuickCopyList();
+    updateActionBar();
+}
+
+// --- Exportar funciones al scope global ---
+window.handleIndividualBgUpload = handleIndividualBgUpload;
+window.updateActionBar = updateActionBar;
+window.clearSelection = clearSelection;
+window.deleteSelectedSlides = deleteSelectedSlides;
+window.undoAction = undoAction;
+window.toggleSelectionMode = toggleSelectionMode;
+window.toggleSlideSelection = toggleSlideSelection;
