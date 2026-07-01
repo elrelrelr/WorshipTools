@@ -249,6 +249,23 @@ function searchExternal(type) {
 }
 
 // --- PROCESAMIENTO DE SLIDES ---
+function insertBlankSlide() {
+    const input = document.getElementById('lyricsInput');
+    const val = input.value.trim();
+    input.value = "[VACIO]\n\n" + (val ? val : "");
+    processLyrics();
+}
+
+function insertTitleSlide() {
+    const songName = toTitleCase(document.getElementById('songName').value || "Título");
+    const songAuthor = toTitleCase(document.getElementById('songAuthor').value || "");
+    const titleText = songAuthor ? `${songName}\n(${songAuthor})` : songName;
+    const input = document.getElementById('lyricsInput');
+    const val = input.value.trim();
+    input.value = "[TITULO]\n" + titleText + "\n\n" + (val ? val : "");
+    processLyrics();
+}
+
 function processLyrics() {
     generateTag();
     refreshSlidesFromCurrentState();
@@ -285,7 +302,7 @@ function refreshSlidesFromCurrentState() {
     
     if (addBlank) newSlidesData.push({ text: " ", isTitle: false, bgEffect: false });
     if (addTitle) {
-        const titleText = songAuthor ? `${songName}\n${songAuthor}` : songName;
+        const titleText = songAuthor ? `${songName}\n(${songAuthor})` : songName;
         newSlidesData.push({ text: titleText, isTitle: true, bgEffect: false });
     }
     
@@ -298,15 +315,21 @@ function refreshSlidesFromCurrentState() {
         for (let line of lines) {
             if (line === "") continue;
             
+            let isBlankTag = false;
             while (true) {
                 if (line.toUpperCase().startsWith('[TITULO]')) {
                     isTitleChunk = true;
                     line = line.substring(8).trim();
                     continue;
                 }
-                if (line.toUpperCase().startsWith('[FONDO_OSCURO]') || line.toUpperCase().startsWith('[ATENUADO]')) {
+                if (line.toUpperCase().startsWith('[FONDO_OSCURO]')) {
                     bgEffectChunk = 'dark';
-                    line = line.replace(/^[(FONDO_OSCURO|ATENUADO)]/i, '').trim();
+                    line = line.substring(14).trim();
+                    continue;
+                }
+                if (line.toUpperCase().startsWith('[ATENUADO]')) {
+                    bgEffectChunk = 'dark';
+                    line = line.substring(10).trim();
                     continue;
                 }
                 if (line.toUpperCase().startsWith('[FONDO_CLARO]')) {
@@ -314,19 +337,59 @@ function refreshSlidesFromCurrentState() {
                     line = line.substring(13).trim();
                     continue;
                 }
+                if (line.toUpperCase().startsWith('[VACIO]')) {
+                    isBlankTag = true;
+                    line = line.substring(7).trim();
+                    continue;
+                }
                 break;
             }
+            
+            if (isBlankTag) {
+                if (chunk.length > 0) {
+                    if (isTitleChunk && songAuthor) {
+                        for (let i = 0; i < chunk.length; i++) {
+                            if (chunk[i].toLowerCase() === songAuthor.toLowerCase()) {
+                                chunk[i] = `(${chunk[i]})`;
+                            }
+                        }
+                    }
+                    newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+                    chunk = [];
+                }
+                newSlidesData.push({ text: " ", isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+                isTitleChunk = false;
+                bgEffectChunk = false;
+                if (line === "") continue;
+            }
+            
             if (line === "") continue;
             
             chunk.push(line);
             if (chunk.length >= maxLines) {
+                if (isTitleChunk && songAuthor) {
+                    for (let i = 0; i < chunk.length; i++) {
+                        if (chunk[i].toLowerCase() === songAuthor.toLowerCase()) {
+                            chunk[i] = `(${chunk[i]})`;
+                        }
+                    }
+                }
                 newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
                 chunk = [];
                 isTitleChunk = false;
                 bgEffectChunk = false;
             }
         }
-        if (chunk.length > 0) newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+        if (chunk.length > 0) {
+            if (isTitleChunk && songAuthor) {
+                for (let i = 0; i < chunk.length; i++) {
+                    if (chunk[i].toLowerCase() === songAuthor.toLowerCase()) {
+                        chunk[i] = `(${chunk[i]})`;
+                    }
+                }
+            }
+            newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk });
+        }
     }
     
     slidesData = newSlidesData;
@@ -350,6 +413,7 @@ function updateSlidesRealTime() {
     }
     
     refreshSlidesFromCurrentState();
+    syncSlidesToLyrics();
 }
 
 // MODIFICAR processLyrics para usar la nueva función
@@ -373,11 +437,6 @@ function cleanAndCorrectLyrics() {
     lines = lines.filter(line => {
         const l = line.trim().toLowerCase();
         if (!l) return true; // Mantener líneas vacías para separación
-        
-        // Quitar si coincide con título o autor o combinación común
-        if (songName && l === songName) return false;
-        if (songAuthor && l === songAuthor) return false;
-        if (songName && songAuthor && (l === `${songName} - ${songAuthor}` || l === `${songName} ${songAuthor}`)) return false;
         
         // Quitar etiquetas de metadatos comunes que vienen al pegar de webs de letras
         if (l.startsWith('título:') || l.startsWith('artista:') || l.startsWith('autor:')) return false;
@@ -891,33 +950,24 @@ function addBlankSlideBefore(index) {
 // Sincroniza los cambios manuales de la vista previa de vuelta al área de texto
 function syncSlidesToLyrics() {
     let lyricsToSync = [...slidesData];
-    
-    const currentName = toTitleCase(document.getElementById('songName').value || "Título");
-    const currentAuth = toTitleCase(document.getElementById('songAuthor').value || "");
-    const titleText = currentAuth ? `${currentName}\n${currentAuth}` : currentName;
-    
-    const addBlank = document.getElementById('addBlankSlide').checked;
-    const addTitle = document.getElementById('addTitleSlide').checked;
-    
-    if (addTitle && lyricsToSync.length > 0) {
-        const possibleTitleIndex = addBlank ? 1 : 0;
-        const slide = lyricsToSync[possibleTitleIndex];
-        if (slide && slide.isTitle && (slide.text === titleText || slide.text === currentName)) {
-            lyricsToSync.splice(possibleTitleIndex, 1);
-        }
-    }
-    if (addBlank && lyricsToSync.length > 0 && lyricsToSync[0].text.trim() === "") {
-        lyricsToSync.splice(0, 1);
-    }
 
     const textArray = lyricsToSync.map(s => {
         let prefix = "";
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        
+        let slideText = s.text.trim();
+        if (slideText === "") {
+            prefix += "[VACIO]";
+            return prefix;
+        }
         return prefix + s.text;
     });
     document.getElementById('lyricsInput').value = textArray.join('\n\n');
+    
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
 }
 
 function updateStyles() {
@@ -1289,6 +1339,12 @@ function loadFromRepertoire(index) {
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        
+        let slideText = s.text.trim();
+        if (slideText === "") {
+            prefix += "[VACIO]";
+            return prefix;
+        }
         return prefix + s.text;
     });
     document.getElementById('lyricsInput').value = textArray.join('\n\n');
@@ -1333,6 +1389,50 @@ function clearRepertoire() {
         repertoireList = [];
         renderRepertoireList();
     }
+}
+
+function sendAllRepertoireToEditor() {
+    if (repertoireList.length === 0) return alert("El repertorio está vacío.");
+    if (slidesData.length > 0) {
+        if (!confirm("Esto reemplazará la canción actual en el editor por todo el repertorio. ¿Continuar?")) return;
+    }
+    
+    let allSlides = [];
+    repertoireList.forEach(song => {
+        let slidesToLoad = song.slides.map(s => {
+            if (typeof s === 'string') return { text: s, isTitle: false, bgEffect: false };
+            return { ...s };
+        });
+        allSlides = allSlides.concat(slidesToLoad);
+    });
+    
+    const textArray = allSlides.map(s => {
+        let prefix = "";
+        if (s.isTitle) prefix += "[TITULO]\n";
+        if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
+        if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+        
+        let slideText = s.text.trim();
+        if (slideText === "") {
+            prefix += "[VACIO]";
+            return prefix;
+        }
+        return prefix + s.text;
+    });
+    document.getElementById('lyricsInput').value = textArray.join('\n\n');
+    
+    document.getElementById('addBlankSlide').checked = false;
+    document.getElementById('addTitleSlide').checked = false;
+    
+    // Clear song name and author since it's a mix
+    document.getElementById('songName').value = "Repertorio Completo";
+    document.getElementById('songAuthor').value = "";
+    
+    updateStyles();
+    generateTag();
+    processLyrics();
+    
+    scrollToSection('diapositivas');
 }
 
 async function downloadSetlist() {
