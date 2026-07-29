@@ -50,28 +50,22 @@
                     <span class="font-bold text-xl tracking-tight">Worship<span class="text-blue-500">Tools</span></span>
                 </div>
                 
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex space-x-2 text-sm">
-                    <button onclick="scrollToSection('formato')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Etiquetado</button>
-                    <button onclick="scrollToSection('diapositivas')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Editor</button>
-                    <button onclick="scrollToSection('setlist-builder')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap text-orange-400">Repertorio (PPTX)</button>
-                    <button onclick="scrollToSection('pdf-merger')" class="hover:text-blue-400 px-3 py-2 transition whitespace-nowrap">Unir PDFs</button>
-                    <button onclick="toggleQuickCopy()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition flex items-center gap-2 whitespace-nowrap ml-2">
-                        <i class="fa-regular fa-clipboard"></i> <span>Copiado Rápido</span>
+                <!-- Right Side Actions -->
+                <div class="flex items-center gap-2">
+                    <!-- Theme Button -->
+                    <button onclick="toggleTheme()" class="shrink-0 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 text-white px-3 lg:px-4 py-2 rounded-full transition-all shadow-md flex items-center gap-2 whitespace-nowrap font-bold ring-2 ring-transparent hover:ring-yellow-300 dark:hover:ring-slate-500" title="Activar Modo Claro/Oscuro">
+                        <i id="themeIcon" class="fa-solid fa-sun text-yellow-100"></i> <span id="themeText" class="hidden xl:inline">Modo Claro</span>
                     </button>
-                    <button onclick="toggleTheme()" class="bg-indigo-500 hover:bg-indigo-600 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-3 py-2 rounded transition flex items-center gap-2 whitespace-nowrap ml-2" title="Cambiar Tema">
-                        <i id="themeIcon" class="fa-solid fa-moon"></i>
+
+                    <!-- Hamburger Menu Button -->
+                    <button onclick="toggleMobileMenu()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        <i id="mobileMenuIcon" class="fa-solid fa-bars text-xl text-slate-700 dark:text-slate-200"></i>
                     </button>
                 </div>
-
-                <!-- Mobile Menu Button -->
-                <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-                    <i id="mobileMenuIcon" class="fa-solid fa-bars text-xl text-slate-700 dark:text-slate-200"></i>
-                </button>
             </div>
 
-            <!-- Mobile Menu Dropdown -->
-            <div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
+            <!-- Menu Dropdown -->
+            <div id="mobileMenu" class="hidden pb-4 space-y-2">
                 <button onclick="scrollToSection('formato'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
                     <i class="fa-solid fa-hashtag text-blue-500"></i> Etiquetado
                 </button>
@@ -85,11 +79,8 @@
                     <i class="fa-solid fa-file-circle-plus text-blue-500"></i> Unir PDFs
                 </button>
                 <hr class="border-slate-200 dark:border-slate-700">
-                <button onclick="toggleQuickCopy()" class="w-full text-left px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
+                <button onclick="toggleQuickCopy(); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
                     <i class="fa-regular fa-clipboard"></i> Copiado Rápido
-                </button>
-                <button onclick="toggleTheme()" class="w-full text-left px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 dark:bg-slate-700 dark:hover:bg-slate-600 text-white transition flex items-center gap-2">
-                    <i id="themeIconMobile" class="fa-solid fa-moon"></i> Cambiar Tema
                 </button>
             </div>
         </div>
@@ -164,11 +155,17 @@
 
         <!-- SECCIÓN 2: EDITOR -->
         <section id="diapositivas" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-            <h2 class="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center gap-2 text-blue-400">
-                <i class="fa-solid fa-layer-group"></i> Editor de Diapositivas
-            </h2>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-blue-400">
+                    <i class="fa-solid fa-layer-group"></i> Editor de Diapositivas
+                </h2>
+                <button onclick="toggleEditor()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
+                    <i id="editorIcon" class="fa-solid fa-chevron-up"></i>
+                    <span id="editorText">Ocultar</span>
+                </button>
+            </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+            <div id="editorContainer" class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                 
                 <!-- Panel Lateral (Configuración) -->
                 <div class="lg:col-span-4 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 h-fit transition-colors">
@@ -178,6 +175,9 @@
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-xs font-bold text-slate-400 uppercase">Letra Completa</label>
                             <div class="flex gap-3">
+                                <span class="text-xs cursor-pointer text-green-400 hover:text-green-300 font-bold" onclick="pasteLyricsFromClipboard()">
+                                    <i class="fa-solid fa-paste"></i> Pegar
+                                </span>
                                 <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold" onclick="cleanAndCorrectLyrics()">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Corregir Texto
                                 </span>
@@ -217,7 +217,7 @@
                         <div>
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Tipografía</span>
                             <div class="flex gap-2 mb-2">
-                                <select id="fontFamily" onchange="updateStyles()" class="bg-slate-700 text-sm rounded p-2.5 flex-1 outline-none text-white border border-slate-600 text-base">
+                                <select id="fontFamily" onchange="updateStyles()" class="bg-white dark:bg-slate-700 text-sm rounded p-2.5 flex-1 outline-none text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 text-base">
                                     <option value="Cambria" selected>Cambria (Default)</option>
                                     <option value="Arial">Arial</option>
                                     <option value="Times New Roman">Times New Roman</option>
@@ -225,7 +225,7 @@
                                     <option value="Impact">Impact</option>
                                 </select>
                                 <input type="number" id="fontSize" value="55" onchange="updateStyles()" title="Tamaño en PT"
-                                    class="bg-slate-700 text-sm rounded p-2.5 w-16 outline-none text-center text-white border border-slate-600 font-mono text-base">
+                                    class="bg-white dark:bg-slate-700 text-sm rounded p-2.5 w-16 outline-none text-center text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 font-mono text-base">
                             </div>
                             <!-- Control de Negrita Visible -->
                             <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-800 dark:text-white cursor-pointer select-none bg-slate-200 dark:bg-slate-800 p-2.5 rounded border border-slate-300 dark:border-slate-600 transition-colors min-h-[44px]">
@@ -237,33 +237,33 @@
                         <!-- Estilo -->
                         <div>
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Estilo y Color</span>
-                            <div class="bg-slate-800 p-3 rounded border border-slate-600 space-y-2">
+                            <div class="bg-slate-100 dark:bg-slate-800 p-3 rounded border border-slate-300 dark:border-slate-600 space-y-2">
                                 <div class="flex items-center gap-3">
                                     <input type="color" id="textColor" value="#000000" onchange="updateStyles()" class="h-10 w-10 bg-transparent border-0 cursor-pointer rounded overflow-hidden" title="Color de Texto">
-                                    <div class="h-6 w-px bg-slate-600"></div>
-                                    <label class="flex items-center gap-1 text-xs sm:text-sm cursor-pointer select-none text-white">
+                                    <div class="h-6 w-px bg-slate-300 dark:bg-slate-600"></div>
+                                    <label class="flex items-center gap-1 text-xs sm:text-sm cursor-pointer select-none text-slate-800 dark:text-white">
                                         <input type="checkbox" id="textShadow" onchange="updateStyles()" class="accent-blue-500"> Sombra
                                     </label>
                                     <input type="color" id="shadowColor" value="#000000" onchange="updateStyles()" class="h-8 w-8 bg-transparent border-0 cursor-pointer rounded overflow-hidden" title="Color de Sombra">
                                 </div>
 
-                                <div class="h-px bg-slate-700 w-full my-1"></div>
+                                <div class="h-px bg-slate-300 dark:bg-slate-700 w-full my-1"></div>
 
                                 <!-- Alineaciones -->
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] text-slate-400 uppercase">H</span>
                                     <div class="flex gap-1">
-                                        <button onclick="setAlignment('left')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnAlignLeft" title="Izquierda"><i class="fa-solid fa-align-left"></i></button>
-                                        <button onclick="setAlignment('center')" class="p-2 hover:bg-slate-700 rounded transition text-white bg-slate-700 min-h-[40px] min-w-[40px]" id="btnAlignCenter" title="Centro"><i class="fa-solid fa-align-center"></i></button>
-                                        <button onclick="setAlignment('right')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnAlignRight" title="Derecha"><i class="fa-solid fa-align-right"></i></button>
+                                        <button onclick="setAlignment('left')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white min-h-[40px] min-w-[40px]" id="btnAlignLeft" title="Izquierda"><i class="fa-solid fa-align-left"></i></button>
+                                        <button onclick="setAlignment('center')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white bg-slate-300 dark:bg-slate-700 min-h-[40px] min-w-[40px]" id="btnAlignCenter" title="Centro"><i class="fa-solid fa-align-center"></i></button>
+                                        <button onclick="setAlignment('right')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white min-h-[40px] min-w-[40px]" id="btnAlignRight" title="Derecha"><i class="fa-solid fa-align-right"></i></button>
                                     </div>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-[10px] text-slate-400 uppercase">V</span>
                                     <div class="flex gap-1">
-                                        <button onclick="setVerticalAlignment('top')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnVAlignTop" title="Arriba"><i class="fa-solid fa-arrow-up"></i></button>
-                                        <button onclick="setVerticalAlignment('center')" class="p-2 hover:bg-slate-700 rounded transition text-white bg-slate-700 min-h-[40px] min-w-[40px]" id="btnVAlignCenter" title="Medio"><i class="fa-solid fa-arrows-up-down"></i></button>
-                                        <button onclick="setVerticalAlignment('bottom')" class="p-2 hover:bg-slate-700 rounded transition text-white min-h-[40px] min-w-[40px]" id="btnVAlignBottom" title="Abajo"><i class="fa-solid fa-arrow-down"></i></button>
+                                        <button onclick="setVerticalAlignment('top')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white min-h-[40px] min-w-[40px]" id="btnVAlignTop" title="Arriba"><i class="fa-solid fa-arrow-up"></i></button>
+                                        <button onclick="setVerticalAlignment('center')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white bg-slate-300 dark:bg-slate-700 min-h-[40px] min-w-[40px]" id="btnVAlignCenter" title="Medio"><i class="fa-solid fa-arrows-up-down"></i></button>
+                                        <button onclick="setVerticalAlignment('bottom')" class="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-slate-700 dark:text-white min-h-[40px] min-w-[40px]" id="btnVAlignBottom" title="Abajo"><i class="fa-solid fa-arrow-down"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -287,11 +287,11 @@
                             </div>
                         </div>
 
-                        <!-- Configuración de Corte (DEFAULT 2) -->
+                        <!-- Configuración de Corte (DEFAULT 1) -->
                         <div>
-                            <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Líneas por diapositiva: <span id="linesVal" class="text-white">2</span></span>
+                            <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Líneas por diapositiva: <span id="linesVal" class="">1</span></span>
                             <!-- Línea original (aproximadamente línea 214) -->
-<input type="range" id="linesPerSlide" min="1" max="8" value="2" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; refreshSlidesFromCurrentState()">
+<input type="range" id="linesPerSlide" min="1" max="8" value="1" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; refreshSlidesFromCurrentState()">
                            
                         </div>
                     </div>
@@ -601,5 +601,10 @@
         <div class="loader w-12 h-12 border-4"></div>
         <p class="text-white font-bold">Descargando recurso...</p>
     </div>
+    
+    <!-- Botón de scroll -->
+    <button id="scrollBtn" onclick="toggleScroll()" class="fixed bottom-4 right-4 z-50 bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg hover:bg-blue-700 transition" style="display: none;" data-direction="down">
+        <i class="fa-solid fa-arrow-down"></i>
+    </button>
 </body>
 </html>

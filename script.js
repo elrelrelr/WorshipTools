@@ -51,6 +51,7 @@ let slidesSortable = null;
 let instrumentosVisible = false;
 let repertorioVisible = false;
 let pdfMergerVisible = false;
+let editorVisible = true;
 
 // Init Theme
 if (localStorage.getItem('theme') === 'light') {
@@ -77,12 +78,33 @@ function toggleTheme() {
 function updateThemeIcon() {
     const icon = document.getElementById('themeIcon');
     const iconMobile = document.getElementById('themeIconMobile');
+    const themeText = document.getElementById('themeText');
     if (isDarkMode) {
-        icon.className = 'fa-solid fa-moon';
-        if (iconMobile) iconMobile.className = 'fa-solid fa-moon';
+        icon.className = 'fa-solid fa-sun text-yellow-100';
+        if (iconMobile) iconMobile.className = 'fa-solid fa-sun text-yellow-100';
+        if (themeText) themeText.innerText = 'Modo Claro';
     } else {
-        icon.className = 'fa-solid fa-sun text-yellow-300';
-        if (iconMobile) iconMobile.className = 'fa-solid fa-sun text-yellow-300';
+        icon.className = 'fa-solid fa-moon text-slate-700 dark:text-slate-200';
+        if (iconMobile) iconMobile.className = 'fa-solid fa-moon text-slate-700';
+        if (themeText) themeText.innerText = 'Modo Oscuro';
+    }
+}
+
+function toggleEditor() {
+    const container = document.getElementById('editorContainer');
+    const icon = document.getElementById('editorIcon');
+    const text = document.getElementById('editorText');
+
+    editorVisible = !editorVisible;
+
+    if (editorVisible) {
+        container.classList.remove('hidden');
+        icon.className = 'fa-solid fa-chevron-up';
+        text.innerText = 'Ocultar';
+    } else {
+        container.classList.add('hidden');
+        icon.className = 'fa-solid fa-chevron-down';
+        text.innerText = 'Mostrar';
     }
 }
 
@@ -201,6 +223,8 @@ function generateTag() {
             initials = "?";
         }
         generatedTagString = `#${hash} (${cleanAuthor || "?"}) (${initials})`;
+        // Remover tildes y acentos (para el resultado etiqueta)
+        generatedTagString = generatedTagString.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     } else {
         generatedTagString = "";
     }
@@ -299,7 +323,7 @@ function refreshSlidesFromCurrentState() {
     const rawText = document.getElementById('lyricsInput').value;
     const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
-    const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 2;
+    const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 1;
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
     
@@ -321,7 +345,8 @@ function refreshSlidesFromCurrentState() {
         let isTitleChunk = false;
         let bgEffectChunk = false;
         let bgImageIdChunk = null;
-        for (let line of lines) {
+        for (let idx = 0; idx < lines.length; idx++) {
+            let line = lines[idx];
             if (line === "") continue;
             
             let isBlankTag = false;
@@ -384,7 +409,27 @@ function refreshSlidesFromCurrentState() {
             if (line === "") continue;
             
             chunk.push(line);
-            if (chunk.length >= maxLines) {
+            
+            let flush = chunk.length >= maxLines;
+            if (isTitleChunk && chunk.length === 1) {
+                let hasAuthorNext = false;
+                for (let k = idx + 1; k < lines.length; k++) {
+                    if (lines[k].startsWith('[')) break;
+                    if (lines[k].trim() !== "") {
+                        if (lines[k].trim().startsWith('(') && lines[k].trim().endsWith(')')) {
+                            hasAuthorNext = true;
+                        }
+                        break;
+                    }
+                }
+                if (hasAuthorNext) {
+                    flush = false;
+                }
+            } else if (isTitleChunk && chunk.length >= 2) {
+                flush = true;
+            }
+            
+            if (flush) {
                 if (isTitleChunk && songAuthor) {
                     for (let i = 0; i < chunk.length; i++) {
                         if (chunk[i].toLowerCase() === songAuthor.toLowerCase()) {
@@ -1074,20 +1119,23 @@ function updateStyles() {
     const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
     const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
 
-    const btnBg = 'bg-slate-700';
-    document.getElementById('btnAlignLeft').classList.remove(btnBg);
-    document.getElementById('btnAlignCenter').classList.remove(btnBg);
-    document.getElementById('btnAlignRight').classList.remove(btnBg);
-    if (currentAlignment === 'left') document.getElementById('btnAlignLeft').classList.add(btnBg);
-    if (currentAlignment === 'center') document.getElementById('btnAlignCenter').classList.add(btnBg);
-    if (currentAlignment === 'right') document.getElementById('btnAlignRight').classList.add(btnBg);
+    const activeClasses = ['bg-slate-300', 'dark:bg-slate-700'];
+    const removeActive = (id) => document.getElementById(id).classList.remove(...activeClasses);
+    const addActive = (id) => document.getElementById(id).classList.add(...activeClasses);
 
-    document.getElementById('btnVAlignTop').classList.remove(btnBg);
-    document.getElementById('btnVAlignCenter').classList.remove(btnBg);
-    document.getElementById('btnVAlignBottom').classList.remove(btnBg);
-    if (currentVerticalAlignment === 'top') document.getElementById('btnVAlignTop').classList.add(btnBg);
-    if (currentVerticalAlignment === 'center') document.getElementById('btnVAlignCenter').classList.add(btnBg);
-    if (currentVerticalAlignment === 'bottom') document.getElementById('btnVAlignBottom').classList.add(btnBg);
+    removeActive('btnAlignLeft');
+    removeActive('btnAlignCenter');
+    removeActive('btnAlignRight');
+    if (currentAlignment === 'left') addActive('btnAlignLeft');
+    if (currentAlignment === 'center') addActive('btnAlignCenter');
+    if (currentAlignment === 'right') addActive('btnAlignRight');
+
+    removeActive('btnVAlignTop');
+    removeActive('btnVAlignCenter');
+    removeActive('btnVAlignBottom');
+    if (currentVerticalAlignment === 'top') addActive('btnVAlignTop');
+    if (currentVerticalAlignment === 'center') addActive('btnVAlignCenter');
+    if (currentVerticalAlignment === 'bottom') addActive('btnVAlignBottom');
 
     document.querySelectorAll('.slide-preview').forEach(slide => {
         const idx = parseInt(slide.dataset.index);
@@ -2721,3 +2769,84 @@ window.deleteSelectedSlides = deleteSelectedSlides;
 window.undoAction = undoAction;
 window.toggleSelectionMode = toggleSelectionMode;
 window.toggleSlideSelection = toggleSlideSelection;
+
+// --- NUEVAS FUNCIONES ---
+async function pasteLyricsFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+            const input = document.getElementById('lyricsInput');
+            const startPos = input.selectionStart;
+            const endPos = input.selectionEnd;
+            input.value = input.value.substring(0, startPos) + text + input.value.substring(endPos, input.value.length);
+            input.focus();
+            
+            updateSlidesRealTime();
+            
+            const btn = document.querySelector('span[onclick="pasteLyricsFromClipboard()"]');
+            if(btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Pegado`;
+                setTimeout(() => btn.innerHTML = originalHTML, 1500);
+            }
+        }
+    } catch (err) {
+        console.error('Error al pegar: ', err);
+        alert('No se pudo acceder al portapapeles automáticamente. Pega el texto manualmente con Ctrl+V.');
+    }
+}
+
+window.addEventListener('scroll', () => {
+    const scrollBtn = document.getElementById('scrollBtn');
+    if (!scrollBtn) return;
+    
+    const repSection = document.getElementById('setlist-builder');
+    
+    if (repSection && window.scrollY >= repSection.offsetTop - 150) {
+        scrollBtn.style.display = 'flex';
+        
+        const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50;
+        
+        if (isAtBottom) {
+            scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+            scrollBtn.setAttribute('data-direction', 'up');
+        } else {
+            scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+            scrollBtn.setAttribute('data-direction', 'down');
+        }
+    } else {
+        scrollBtn.style.display = 'none';
+    }
+});
+
+window.toggleScroll = function() {
+    const scrollBtn = document.getElementById('scrollBtn');
+    if (scrollBtn.getAttribute('data-direction') === 'up') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+};
+
+// Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+    // Establecer fecha del próximo domingo por defecto en el input de Repertorio
+    const repFileNameInput = document.getElementById('repertoireFileName');
+    if (repFileNameInput) {
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+        const nextSunday = new Date(today);
+        nextSunday.setDate(today.getDate() + daysUntilSunday);
+        
+        const meses = ["agosto", "septiembre", "octubre", "noviembre", "diciembre", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio"];
+        // Arreglando el índice de los meses
+        const nombresMeses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+        
+        const day = String(nextSunday.getDate()).padStart(2, '0');
+        const month = nombresMeses[nextSunday.getMonth()];
+        const year = nextSunday.getFullYear();
+        
+        repFileNameInput.value = `domingo ${day} ${month} ${year}`;
+    }
+});
