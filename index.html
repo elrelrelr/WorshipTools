@@ -167,16 +167,29 @@
                     
                     <!-- Letra -->
                     <div>
-                        <div class="flex justify-between items-center mb-2">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                             <label class="text-xs font-bold text-slate-400 uppercase">Letra Completa</label>
-                            <div class="flex gap-3">
-                                <span class="text-xs cursor-pointer text-green-400 hover:text-green-300 font-bold" onclick="pasteLyricsFromClipboard()">
-                                    <i class="fa-solid fa-paste"></i> Pegar
+                            <div class="flex flex-wrap gap-1.5 sm:gap-2">
+                                <span class="text-xs cursor-pointer text-green-400 hover:text-green-300 font-bold flex items-center gap-1" onclick="pasteLyricsFromClipboard()">
+                                    <i class="fa-solid fa-paste"></i> <span class="hidden sm:inline">Pegar</span>
                                 </span>
-                                <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold" onclick="cleanAndCorrectLyrics()">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Corregir Texto
+                                <span class="text-xs cursor-pointer text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1" onclick="cleanAndCorrectLyrics()">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="hidden sm:inline">Corregir</span>
                                 </span>
-                                <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo" onclick="clearSlides()">Limpiar Todo</span>
+                                <span class="text-xs cursor-pointer text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1" onclick="openLyricsFullscreen()">
+                                    <i class="fa-solid fa-expand"></i> <span class="hidden sm:inline">Pantalla</span>
+                                </span>
+                                <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo flex items-center gap-1" onclick="clearSlides()">
+                                    <i class="fa-solid fa-trash"></i> <span class="hidden sm:inline">Limpiar</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="relative mb-2">
+                            <div class="relative flex items-center">
+                                <i class="fa-solid fa-search absolute left-3 text-slate-400 text-sm pointer-events-none z-10" style="top: 15%"></i>
+                                <input type="text" id="lyricsSearch" placeholder="Buscar en letra..." oninput="searchInLyrics()"
+                                    class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded py-2 pl-10 pr-16 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none transition-colors">
+                                <span id="searchCount" class="absolute right-3 text-xs text-slate-500 hidden z-10" style="top: 15%">0/0</span>
                             </div>
                         </div>
                         <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
@@ -558,5 +571,91 @@
     <button id="scrollBtn" onclick="toggleScroll()" class="fixed bottom-4 right-4 z-50 bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg hover:bg-blue-700 transition" style="display: none;" data-direction="down">
         <i class="fa-solid fa-arrow-down"></i>
     </button>
+
+    <!-- Modal de Inserción de Canción en Repertorio -->
+    <div id="insertionModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[90] p-4 backdrop-blur-sm">
+        <div class="bg-slate-800 rounded-xl w-full max-w-md shadow-2xl border border-slate-700 flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-code-merge text-purple-500 mr-2"></i> Insertar Canción</h3>
+                <button onclick="closeInsertionModal()" class="text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto custom-scroll flex-1">
+                <div class="mb-4">
+                    <p class="text-sm text-slate-300 mb-2">Insertar canción después de la diapositiva:</p>
+                    <select id="insertionSlideSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-slate-300 mb-2">Seleccionar canción a insertar:</p>
+                    <select id="insertionSongSelect" class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 text-white text-sm focus:border-purple-500 outline-none">
+                    </select>
+                </div>
+                <div id="currentInsertions" class="mb-4 hidden">
+                    <p class="text-xs text-slate-400 mb-2">Inserciones actuales:</p>
+                    <div id="insertionsList" class="space-y-1 text-xs"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-700 flex gap-2">
+                <button onclick="undoInsertion()" id="undoInsertionBtn" class="bg-amber-600 hover:bg-amber-700 text-white py-2 px-3 rounded-lg transition font-bold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button onclick="closeInsertionModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition">Cancelar</button>
+                <button onclick="addInsertion()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition font-bold">Insertar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pantalla Completa para Letra -->
+    <div id="lyricsFullscreenModal" class="fixed inset-0 bg-slate-900 hidden items-center justify-center z-[100] p-4 sm:p-6 lg:p-8">
+        <div class="w-full h-full flex flex-col bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-music text-blue-500 text-xl"></i>
+                    <h3 class="text-lg sm:text-xl font-bold text-white">Letra en Pantalla Completa</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="decreaseLyricsFontSize()" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Disminuir tamaño">
+                        <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <span id="lyricsFontSizeDisplay" class="text-white text-sm font-mono w-12 text-center">18px</span>
+                    <button onclick="increaseLyricsFontSize()" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Aumentar tamaño">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <div class="w-px h-6 bg-slate-600 mx-2"></div>
+                    <button onclick="closeLyricsFullscreen()" class="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition" title="Cerrar">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Search Bar -->
+            <div class="p-3 border-b border-slate-700 bg-slate-850">
+                <div class="relative">
+                    <input type="text" id="lyricsFullscreenSearch" placeholder="Buscar en letra..." oninput="searchInFullscreenLyrics()"
+                        class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 pl-10 text-white text-sm focus:border-blue-500 outline-none transition-colors">
+                    <i class="fa-solid fa-search absolute left-3 text-slate-400" style="top: 15%"></i>
+                    <div class="flex gap-1 mt-2">
+                        <button onclick="findPreviousMatch()" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs transition">
+                            <i class="fa-solid fa-chevron-up"></i> Anterior
+                        </button>
+                        <button onclick="findNextMatch()" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs transition">
+                            <i class="fa-solid fa-chevron-down"></i> Siguiente
+                        </button>
+                        <span id="fullscreenSearchCount" class="text-xs text-slate-400 self-center ml-2">0/0</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Content -->
+            <div id="lyricsFullscreenContent" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scroll">
+                <div id="lyricsFullscreenText" class="text-white whitespace-pre-wrap leading-relaxed" style="font-size: 18px;">
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="p-3 border-t border-slate-700 bg-slate-900 flex justify-between items-center text-xs text-slate-400">
+                <span>Presiona ESC para cerrar</span>
+                <span id="lyricsLineCount">0 líneas</span>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

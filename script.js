@@ -39,6 +39,7 @@ let isDarkMode = true;
 
 // Estado Repertoire (PPTX Queue)
 let repertoireList = [];
+// Estructura: [{ name, slides, styles, bgRegistrySnapshot, insertions: [{ afterSlide: number, slides: array, songName: string }] }]
 
 // Sortable instance for slides
 let slidesSortable = null;
@@ -1435,16 +1436,24 @@ function renderRepertoireList() {
         const el = document.createElement('div');
         el.className = 'repertoire-item group bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 flex items-center justify-between mb-2 transition-colors';
 
+        // Calcular total de diapositivas incluyendo inserciones
+        const processedSlides = processSongInsertions(item);
+        const totalSlides = processedSlides.length;
+        const insertionCount = item.insertions ? item.insertions.length : 0;
+
         el.innerHTML = `
             <div class="flex items-center gap-3 overflow-hidden flex-1">
                 <span class="text-amber-600 dark:text-amber-500 font-bold text-xs w-4">${index + 1}.</span>
                 <i class="fa-solid fa-music text-blue-500"></i>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm text-slate-800 dark:text-white font-bold truncate">${escapeHtml(item.name)}</p>
-                    <p class="text-[10px] text-slate-500 dark:text-slate-400">${item.slides.length} diapositivas</p>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400">${totalSlides} diapositivas${insertionCount > 0 ? ` (+${insertionCount} inserción${insertionCount > 1 ? 'es' : ''})` : ''}</p>
                 </div>
             </div>
             <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="openInsertionModal(${index})" class="text-slate-400 hover:text-purple-400 p-1" title="Insertar canción">
+                    <i class="fa-solid fa-code-merge"></i>
+                </button>
                 <button onclick="loadFromRepertoire(${index})" class="text-slate-400 hover:text-blue-400 p-1" title="Cargar en el Editor">
                     <i class="fa-solid fa-arrow-up-from-bracket"></i>
                 </button>
@@ -1501,8 +1510,9 @@ function loadFromRepertoire(index) {
         Object.assign(bgRegistry, song.bgRegistrySnapshot);
     }
 
-    // Cargar letra (slides)
-    let slidesToLoad = song.slides.map(s => {
+    // Cargar letra (slides) con inserciones procesadas
+    let processedSlides = processSongInsertions(song);
+    let slidesToLoad = processedSlides.map(s => {
         if (typeof s === 'string') return { text: s, isTitle: false };
         return { ...s };
     });
@@ -1551,6 +1561,216 @@ function removeRepertoireItem(index) {
     renderRepertoireList();
 }
 
+// --- INSERCIÓN DE CANCIONES EN REPERTORIO ---
+let currentInsertionSongIndex = null;
+let insertionHistory = []; // Historial para deshacer
+
+// Función auxiliar para procesar inserciones en una canción
+function processSongInsertions(song) {
+    if (!song.insertions || song.insertions.length === 0) {
+        return song.slides;
+    }
+    
+    let processedSlides = [];
+    let insertionIndex = 0;
+    
+    for (let i = 0; i < song.slides.length; i++) {
+        // Agregar slide actual
+        processedSlides.push(song.slides[i]);
+        
+        // Verificar si hay inserción después de este slide
+        while (insertionIndex < song.insertions.length && 
+               song.insertions[insertionIndex].afterSlide === i) {
+            const insertion = song.insertions[insertionIndex];
+            
+            // Agregar todas las diapositivas copiadas de la inserción
+            if (insertion.slides && insertion.slides.length > 0) {
+                insertion.slides.forEach(slide => {
+                    processedSlides.push(slide);
+                });
+            }
+            
+            insertionIndex++;
+        }
+    }
+    
+    return processedSlides;
+}
+
+function openInsertionModal(songIndex) {
+    currentInsertionSongIndex = songIndex;
+    const song = repertoireList[songIndex];
+    const modal = document.getElementById('insertionModal');
+    const slideSelect = document.getElementById('insertionSlideSelect');
+    const songSelect = document.getElementById('insertionSongSelect');
+    
+    // Llenar select de diapositivas
+    slideSelect.innerHTML = '';
+    for (let i = 0; i < song.slides.length; i++) {
+        const option = document.createElement('option');
+        option.value = i;
+        option.textContent = `Diapositiva ${i + 1}`;
+        slideSelect.appendChild(option);
+    }
+    
+    // Llenar select de canciones (excluyendo la actual)
+    songSelect.innerHTML = '';
+    repertoireList.forEach((item, index) => {
+        if (index !== songIndex) {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${index + 1}. ${item.name}`;
+            songSelect.appendChild(option);
+        }
+    });
+    
+    // Mostrar inserciones actuales si existen
+    if (song.insertions && song.insertions.length > 0) {
+        document.getElementById('currentInsertions').classList.remove('hidden');
+        renderInsertionsList(song);
+    } else {
+        document.getElementById('currentInsertions').classList.add('hidden');
+    }
+    
+    // Habilitar/deshabilitar botón de deshacer según historial
+    const undoBtn = document.getElementById('undoInsertionBtn');
+    const hasHistory = insertionHistory.some(h => h.songIndex === songIndex);
+    undoBtn.disabled = !hasHistory;
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeInsertionModal() {
+    const modal = document.getElementById('insertionModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentInsertionSongIndex = null;
+}
+
+function undoInsertion() {
+    if (currentInsertionSongIndex === null || insertionHistory.length === 0) return;
+    
+    // Buscar el último estado guardado para esta canción
+    const lastHistoryIndex = insertionHistory.map((h, i) => ({ ...h, originalIndex: i }))
+        .filter(h => h.songIndex === currentInsertionSongIndex)
+        .pop();
+    
+    if (!lastHistoryIndex) return;
+    
+    const song = repertoireList[currentInsertionSongIndex];
+    
+    // Restaurar estado anterior
+    if (lastHistoryIndex.previousInsertions.length === 0) {
+        song.insertions = [];
+    } else {
+        song.insertions = JSON.parse(JSON.stringify(lastHistoryIndex.previousInsertions));
+    }
+    
+    // Eliminar del historial
+    insertionHistory.splice(lastHistoryIndex.originalIndex, 1);
+    
+    // Actualizar UI
+    renderRepertoireList();
+    renderInsertionsList(song);
+    
+    // Deshabilitar botón de deshacer si no hay más historial
+    const hasHistory = insertionHistory.some(h => h.songIndex === currentInsertionSongIndex);
+    document.getElementById('undoInsertionBtn').disabled = !hasHistory;
+    
+    // Cargar en el editor para mostrar el resultado
+    loadFromRepertoire(currentInsertionSongIndex);
+}
+
+function addInsertion() {
+    if (currentInsertionSongIndex === null) return;
+    
+    const slideIndex = parseInt(document.getElementById('insertionSlideSelect').value);
+    const songIndex = parseInt(document.getElementById('insertionSongSelect').value);
+    
+    if (isNaN(slideIndex) || isNaN(songIndex)) {
+        alert('Selecciona una diapositiva y una canción');
+        return;
+    }
+    
+    const song = repertoireList[currentInsertionSongIndex];
+    const insertedSong = repertoireList[songIndex];
+    
+    // Guardar estado anterior en historial
+    insertionHistory.push({
+        songIndex: currentInsertionSongIndex,
+        previousInsertions: song.insertions ? JSON.parse(JSON.stringify(song.insertions)) : []
+    });
+    
+    if (!song.insertions) song.insertions = [];
+    
+    // Copiar las diapositivas de la canción a insertar (copia independiente)
+    const copiedSlides = insertedSong.slides.map(slide => {
+        if (typeof slide === 'string') return { text: slide, isTitle: false };
+        return { ...slide };
+    });
+    
+    // Verificar si ya existe una inserción en la misma posición
+    const existingIndex = song.insertions.findIndex(ins => ins.afterSlide === slideIndex);
+    if (existingIndex !== -1) {
+        song.insertions[existingIndex].slides = copiedSlides;
+        song.insertions[existingIndex].songName = insertedSong.name;
+    } else {
+        song.insertions.push({ afterSlide: slideIndex, slides: copiedSlides, songName: insertedSong.name });
+    }
+    
+    // Ordenar inserciones por posición
+    song.insertions.sort((a, b) => a.afterSlide - b.afterSlide);
+    
+    renderRepertoireList();
+    renderInsertionsList(song);
+    
+    // Habilitar botón de deshacer
+    document.getElementById('undoInsertionBtn').disabled = false;
+    
+    // Cargar en el editor para mostrar el resultado inmediatamente
+    loadFromRepertoire(currentInsertionSongIndex);
+    
+    // Cerrar el modal
+    closeInsertionModal();
+}
+
+function renderInsertionsList(song) {
+    const list = document.getElementById('insertionsList');
+    list.innerHTML = '';
+    
+    if (!song.insertions || song.insertions.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 italic">Sin inserciones</p>';
+        return;
+    }
+    
+    song.insertions.forEach((ins, idx) => {
+        const div = document.createElement('div');
+        div.className = 'flex justify-between items-center bg-slate-700 rounded p-2';
+        div.innerHTML = `
+            <span class="text-slate-300">Después de slide ${ins.afterSlide + 1}: <strong>${ins.songName}</strong> (${ins.slides.length} diapositivas)</span>
+            <button onclick="removeInsertion(${idx})" class="text-red-400 hover:text-red-300">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function removeInsertion(insertionIndex) {
+    if (currentInsertionSongIndex === null) return;
+    
+    const song = repertoireList[currentInsertionSongIndex];
+    song.insertions.splice(insertionIndex, 1);
+    
+    if (song.insertions.length === 0) {
+        document.getElementById('currentInsertions').classList.add('hidden');
+    }
+    
+    renderRepertoireList();
+    renderInsertionsList(song);
+}
+
 function handlePptxUpload(input) {
     if (input.files) {
         alert("Nota: Los archivos PPTX externos no pueden combinarse automáticamente.\n\nSolo se pueden unir las canciones creadas en el editor.\n\nPuedes abrir los archivos PPTX por separado y copiar las diapositivas manualmente, o recrear la canción en el editor.");
@@ -1582,7 +1802,9 @@ function sendAllRepertoireToEditor() {
 
     let allSlides = [];
     repertoireList.forEach(song => {
-        let slidesToLoad = song.slides.map(s => {
+        // Procesar inserciones para cada canción
+        let processedSlides = processSongInsertions(song);
+        let slidesToLoad = processedSlides.map(s => {
             if (typeof s === 'string') return { text: s, isTitle: false, bgEffect: false };
             return { ...s };
         });
@@ -1663,9 +1885,11 @@ async function downloadSetlist() {
             // DIAPOSITIVA EN BLANCO
             pptx.addSlide({ masterName: masterName });
 
-            // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN
-            for (let i = 0; i < song.slides.length; i++) {
-                const slideObj = song.slides[i];
+            // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN CON INSERCIONES
+            let processedSlides = processSongInsertions(song);
+            
+            // Generar diapositivas del PPTX
+            for (let slideObj of processedSlides) {
                 let text = (typeof slideObj === 'string' ? slideObj : slideObj.text).trim() || " ";
                 const isTitle = typeof slideObj === 'string' ? false : slideObj.isTitle;
                 let slideFontSize = isTitle ? Math.min(st.size * 1.1, 132) : st.size;
@@ -2681,22 +2905,22 @@ window.addEventListener('scroll', () => {
     const scrollBtn = document.getElementById('scrollBtn');
     if (!scrollBtn) return;
     
-    const repSection = document.getElementById('setlist-builder');
+    // Mostrar siempre el botón de scroll
+    scrollBtn.style.display = 'flex';
     
-    if (repSection && window.scrollY >= repSection.offsetTop - 150) {
-        scrollBtn.style.display = 'flex';
-        
-        const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50;
-        
-        if (isAtBottom) {
-            scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
-            scrollBtn.setAttribute('data-direction', 'up');
-        } else {
-            scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
-            scrollBtn.setAttribute('data-direction', 'down');
-        }
+    const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50;
+    const isAtTop = window.scrollY < 100;
+    
+    if (isAtBottom) {
+        scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
+        scrollBtn.setAttribute('data-direction', 'up');
+    } else if (isAtTop) {
+        scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+        scrollBtn.setAttribute('data-direction', 'down');
     } else {
-        scrollBtn.style.display = 'none';
+        // En medio: mostrar flecha hacia abajo por defecto
+        scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-down"></i>';
+        scrollBtn.setAttribute('data-direction', 'down');
     }
 });
 
@@ -2708,6 +2932,167 @@ window.toggleScroll = function() {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 };
+
+// --- BÚSQUEDA EN LETRA ---
+let currentSearchIndex = 0;
+let searchMatches = [];
+
+function searchInLyrics() {
+    const searchTerm = document.getElementById('lyricsSearch').value;
+    const textarea = document.getElementById('lyricsInput');
+    const countDisplay = document.getElementById('searchCount');
+    
+    if (!searchTerm) {
+        countDisplay.classList.add('hidden');
+        return;
+    }
+    
+    const text = textarea.value;
+    const matches = text.toLowerCase().split(searchTerm.toLowerCase()).length - 1;
+    
+    if (matches > 0) {
+        countDisplay.classList.remove('hidden');
+        countDisplay.textContent = `${matches} coincidencia(s)`;
+    } else {
+        countDisplay.classList.remove('hidden');
+        countDisplay.textContent = '0 coincidencias';
+    }
+}
+
+// --- PANTALLA COMPLETA PARA LETRA ---
+let lyricsFontSize = 18;
+
+function openLyricsFullscreen() {
+    const modal = document.getElementById('lyricsFullscreenModal');
+    const textContent = document.getElementById('lyricsFullscreenText');
+    const textarea = document.getElementById('lyricsInput');
+    
+    textContent.textContent = textarea.value || 'No hay letra para mostrar.';
+    updateLyricsLineCount();
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLyricsFullscreen() {
+    const modal = document.getElementById('lyricsFullscreenModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+    
+    // Limpiar búsqueda
+    document.getElementById('lyricsFullscreenSearch').value = '';
+    document.getElementById('lyricsFullscreenText').innerHTML = document.getElementById('lyricsFullscreenText').textContent;
+}
+
+function increaseLyricsFontSize() {
+    if (lyricsFontSize < 48) {
+        lyricsFontSize += 2;
+        updateLyricsFontSize();
+    }
+}
+
+function decreaseLyricsFontSize() {
+    if (lyricsFontSize > 12) {
+        lyricsFontSize -= 2;
+        updateLyricsFontSize();
+    }
+}
+
+function updateLyricsFontSize() {
+    const textElement = document.getElementById('lyricsFullscreenText');
+    const display = document.getElementById('lyricsFontSizeDisplay');
+    textElement.style.fontSize = lyricsFontSize + 'px';
+    display.textContent = lyricsFontSize + 'px';
+}
+
+function updateLyricsLineCount() {
+    const text = document.getElementById('lyricsFullscreenText').textContent;
+    const lines = text.split('\n').filter(line => line.trim()).length;
+    document.getElementById('lyricsLineCount').textContent = `${lines} líneas`;
+}
+
+// --- BÚSQUEDA EN PANTALLA COMPLETA ---
+let fullscreenSearchIndex = 0;
+let fullscreenMatches = [];
+
+function searchInFullscreenLyrics() {
+    const searchTerm = document.getElementById('lyricsFullscreenSearch').value;
+    const textElement = document.getElementById('lyricsFullscreenText');
+    const originalText = textElement.textContent;
+    const countDisplay = document.getElementById('fullscreenSearchCount');
+    
+    if (!searchTerm) {
+        textElement.innerHTML = originalText;
+        countDisplay.textContent = '0/0';
+        fullscreenMatches = [];
+        fullscreenSearchIndex = 0;
+        return;
+    }
+    
+    const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+    const matches = originalText.match(regex);
+    
+    if (matches) {
+        fullscreenMatches = matches;
+        fullscreenSearchIndex = 0;
+        
+        const highlightedText = originalText.replace(regex, '<mark class="bg-yellow-500 text-black px-1 rounded">$1</mark>');
+        textElement.innerHTML = highlightedText;
+        
+        countDisplay.textContent = `1/${matches.length}`;
+        scrollToFirstMatch();
+    } else {
+        textElement.innerHTML = originalText;
+        countDisplay.textContent = '0/0';
+        fullscreenMatches = [];
+    }
+}
+
+function findNextMatch() {
+    if (fullscreenMatches.length === 0) return;
+    
+    fullscreenSearchIndex = (fullscreenSearchIndex + 1) % fullscreenMatches.length;
+    document.getElementById('fullscreenSearchCount').textContent = `${fullscreenSearchIndex + 1}/${fullscreenMatches.length}`;
+    scrollToMatch(fullscreenSearchIndex);
+}
+
+function findPreviousMatch() {
+    if (fullscreenMatches.length === 0) return;
+    
+    fullscreenSearchIndex = (fullscreenSearchIndex - 1 + fullscreenMatches.length) % fullscreenMatches.length;
+    document.getElementById('fullscreenSearchCount').textContent = `${fullscreenSearchIndex + 1}/${fullscreenMatches.length}`;
+    scrollToMatch(fullscreenSearchIndex);
+}
+
+function scrollToFirstMatch() {
+    const marks = document.querySelectorAll('#lyricsFullscreenText mark');
+    if (marks.length > 0) {
+        marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function scrollToMatch(index) {
+    const marks = document.querySelectorAll('#lyricsFullscreenText mark');
+    if (marks[index]) {
+        marks[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('lyricsFullscreenModal');
+        if (!modal.classList.contains('hidden')) {
+            closeLyricsFullscreen();
+        }
+    }
+});
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
