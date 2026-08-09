@@ -40,17 +40,12 @@ let isDarkMode = true;
 // Estado Repertoire (PPTX Queue)
 let repertoireList = [];
 
-// Estado PDF Merger
-let selectedPdfs = [];
-let dragStartIndex;
-
 // Sortable instance for slides
 let slidesSortable = null;
 
 // Estado Secciones
 let instrumentosVisible = false;
 let repertorioVisible = false;
-let pdfMergerVisible = false;
 let editorVisible = true;
 
 // Init Theme
@@ -162,24 +157,6 @@ function toggleRepertorio() {
         if (repertoireList.length > 0) {
             preview.classList.remove('hidden');
         }
-        icon.className = 'fa-solid fa-chevron-down';
-        text.innerText = 'Mostrar';
-    }
-}
-
-function togglePdfMerger() {
-    const container = document.getElementById('pdfMergerContainer');
-    const icon = document.getElementById('pdfMergerIcon');
-    const text = document.getElementById('pdfMergerText');
-
-    pdfMergerVisible = !pdfMergerVisible;
-
-    if (pdfMergerVisible) {
-        container.classList.remove('hidden');
-        icon.className = 'fa-solid fa-chevron-up';
-        text.innerText = 'Ocultar';
-    } else {
-        container.classList.add('hidden');
         icon.className = 'fa-solid fa-chevron-down';
         text.innerText = 'Mostrar';
     }
@@ -1907,102 +1884,6 @@ async function exportToPDF() {
         pdf.save(fName + ".pdf");
     } catch (e) { console.error(e); alert("Error en PDF."); }
     finally { btn.disabled = false; document.getElementById('loadingIndicator').classList.add('hidden'); }
-}
-
-// --- PDF MERGER LOGIC ---
-function handlePdfSelect(input) {
-    if (input.files) {
-        const fileList = Array.from(input.files);
-        selectedPdfs = [...selectedPdfs, ...fileList];
-        renderPdfList();
-    }
-    input.value = "";
-}
-
-function renderPdfList() {
-    const list = document.getElementById('pdfList');
-    const count = document.getElementById('pdfCount');
-    list.innerHTML = '';
-    count.innerText = selectedPdfs.length;
-
-    if (selectedPdfs.length === 0) {
-        list.innerHTML = '<p class="text-slate-500 text-xs text-center mt-10">No hay archivos seleccionados.</p>';
-        return;
-    }
-
-    selectedPdfs.forEach((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'pdf-item';
-        item.setAttribute('draggable', 'true');
-        item.dataset.index = index;
-        item.addEventListener('dragstart', dragStart);
-        item.addEventListener('dragover', dragOver);
-        item.addEventListener('drop', drop);
-        item.addEventListener('dragenter', dragEnter);
-        item.addEventListener('dragleave', dragLeave);
-        item.addEventListener('dragend', dragEnd);
-
-        item.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden pointer-events-none">
-                        <i class="fa-solid fa-grip-lines text-slate-500 mr-1 cursor-grab"></i>
-                        <i class="fa-solid fa-file-pdf text-red-500 text-lg"></i>
-                        <span class="text-sm text-white truncate">${file.name}</span>
-                        <span class="text-xs text-slate-500 whitespace-nowrap">(${(file.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    <button onclick="removePdf(${index})" class="text-slate-400 hover:text-red-400 p-1 z-10">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                `;
-        list.appendChild(item);
-    });
-}
-
-function dragStart() { dragStartIndex = +this.dataset.index; this.classList.add('dragging'); }
-function dragOver(e) { e.preventDefault(); }
-function dragEnter() { this.classList.add('border-blue-500'); }
-function dragLeave() { this.classList.remove('border-blue-500'); }
-function dragEnd() { this.classList.remove('dragging'); document.querySelectorAll('.pdf-item').forEach(i => i.classList.remove('border-blue-500')); }
-function drop() {
-    const dragEndIndex = +this.dataset.index;
-    swapItems(dragStartIndex, dragEndIndex);
-}
-function swapItems(fromIndex, toIndex) {
-    const itemOne = selectedPdfs[fromIndex];
-    const itemTwo = selectedPdfs[toIndex];
-    selectedPdfs[fromIndex] = itemTwo;
-    selectedPdfs[toIndex] = itemOne;
-    renderPdfList();
-}
-function removePdf(index) { selectedPdfs.splice(index, 1); renderPdfList(); }
-
-async function mergePdfs() {
-    if (selectedPdfs.length === 0) return alert("Selecciona al menos un archivo PDF.");
-    const btn = document.querySelector('button[onclick="mergePdfs()"]');
-    const loader = document.getElementById('mergeLoader');
-    btn.disabled = true; btn.classList.add('opacity-50'); loader.classList.remove('hidden');
-
-    try {
-        const { PDFDocument } = PDFLib;
-        const mergedPdf = await PDFDocument.create();
-
-        for (const file of selectedPdfs) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await PDFDocument.load(arrayBuffer);
-            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-            copiedPages.forEach((page) => mergedPdf.addPage(page));
-        }
-
-        const pdfBytes = await mergedPdf.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        let fileName = document.getElementById('mergedFileName').value.trim();
-        if (!fileName) fileName = "Documento_Unido";
-        if (!fileName.toLowerCase().endsWith('.pdf')) fileName += '.pdf';
-        link.download = fileName;
-        link.click();
-    } catch (error) { console.error(error); alert("Error al unir PDFs. Verifica que no estén protegidos."); }
-    finally { btn.disabled = false; btn.classList.remove('opacity-50'); loader.classList.add('hidden'); }
 }
 
 // --- IMPORTAR CANCIÓN DESDE ARCHIVO TEXTO/MARKDOWN ---

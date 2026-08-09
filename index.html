@@ -30,8 +30,6 @@
     <!-- 2. Utilidades PDF e Imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- 3. PDF-Lib para unir PDFs -->
-    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     <!-- 4. SortableJS para arrastrar y soltar listas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <!-- 5. JSZip para comprimir archivos -->
@@ -74,9 +72,6 @@
                 </button>
                 <button onclick="scrollToSection('setlist-builder'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
                     <i class="fa-solid fa-list-check text-orange-500"></i> Repertorio (PPTX)
-                </button>
-                <button onclick="scrollToSection('pdf-merger'); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-circle-plus text-blue-500"></i> Unir PDFs
                 </button>
                 <hr class="border-slate-200 dark:border-slate-700">
                 <button onclick="toggleQuickCopy(); toggleMobileMenu()" class="w-full text-left px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition flex items-center gap-2">
@@ -481,49 +476,6 @@
             </div>
         </section>
 
-        <!-- SECCIÓN 3: UNIR PDFS -->
-        <section id="pdf-merger" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-                <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-blue-500 dark:text-blue-400">
-                    <i class="fa-solid fa-file-circle-plus"></i> Unir PDFs (Partituras / Letras)
-                </h2> 
-                <button onclick="togglePdfMerger()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
-                    <i id="pdfMergerIcon" class="fa-solid fa-chevron-down"></i>
-                    <span id="pdfMergerText">Mostrar</span>
-                </button>
-            </div>
-            <div id="pdfMergerContainer" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
-                <div>
-                    <div class="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-xl border border-slate-200 dark:border-slate-700 text-center border-dashed border-2 border-slate-300 dark:border-slate-600 hover:border-blue-500 transition cursor-pointer transition-colors" onclick="document.getElementById('pdfInput').click()">
-                        <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400 mb-3"></i>
-                        <p class="text-sm font-bold text-slate-700 dark:text-white">Haz clic para subir PDFs</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona múltiples archivos para unirlos</p>
-                        <input type="file" id="pdfInput" multiple accept="application/pdf" class="hidden" onchange="handlePdfSelect(this)">
-                    </div>
-                    <div class="mt-4">
-                        <label class="text-xs text-slate-400 uppercase font-bold">Nombre del archivo final</label>
-                        <input type="text" id="mergedFileName" placeholder="Ej: Repertorio_Domingo" 
-                            class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-blue-500 outline-none mt-1 transition-colors text-base">
-                    </div>
-                    <button onclick="mergePdfs()" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2 text-base min-h-[44px]">
-                        <i class="fa-solid fa-object-group"></i> Unir y Descargar
-                    </button>
-                    <div id="mergeLoader" class="hidden flex items-center justify-center gap-2 mt-2 text-sm text-blue-400">
-                        <div class="loader"></div> Uniendo documentos...
-                    </div>
-                </div>
-                <div class="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-64 overflow-y-auto custom-scroll relative transition-colors">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3 flex justify-between">
-                        Archivos Seleccionados 
-                        <span id="pdfCount" class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
-                    </h3>
-                    <p class="text-[10px] text-slate-400 mb-2 italic"><i class="fa-solid fa-arrows-up-down"></i> Arrastra para reordenar</p>
-                    <div id="pdfList" class="space-y-2">
-                        <p class="text-slate-500 text-xs text-center mt-10">No hay archivos seleccionados.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
 
     </main>
 
