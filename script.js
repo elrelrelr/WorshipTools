@@ -21,6 +21,7 @@ let slidesData = [];
 let bgImageData = null;
 let bgRegistry = {}; // { id: "base64data" }
 let nextBgId = 1;
+let globalBgImageId = null; // ID del fondo global para etiquetas FONDOGENERAL
 
 let currentEditingIndex = -1;
 let currentProjectionIndex = -1;
@@ -323,6 +324,8 @@ function refreshSlidesFromCurrentState() {
         let isTitleChunk = false;
         let bgEffectChunk = false;
         let bgImageIdChunk = null;
+        let currentGlobalBgId = null; // Para FONDOGENERAL
+        
         for (let idx = 0; idx < lines.length; idx++) {
             let line = lines[idx];
             if (line === "") continue;
@@ -354,10 +357,20 @@ function refreshSlidesFromCurrentState() {
                     line = line.substring(7).trim();
                     continue;
                 }
+                if (line.toUpperCase().startsWith('[FONDOGENERAL:')) {
+                    const match = line.match(/^\[FONDOGENERAL:([^\]]+)\]/i);
+                    if (match) {
+                        currentGlobalBgId = match[1];
+                        bgImageIdChunk = currentGlobalBgId; // Aplicar global a este slide
+                        line = line.substring(match[0].length).trim();
+                        continue;
+                    }
+                }
                 if (line.toUpperCase().startsWith('[FONDO:')) {
                     const match = line.match(/^\[FONDO:([^\]]+)\]/i);
                     if (match) {
                         bgImageIdChunk = match[1];
+                        currentGlobalBgId = null; // FONDO individual rompe el global
                         line = line.substring(match[0].length).trim();
                         continue;
                     }
@@ -419,7 +432,8 @@ function refreshSlidesFromCurrentState() {
                 chunk = [];
                 isTitleChunk = false;
                 bgEffectChunk = false;
-                bgImageIdChunk = null;
+                // Mantener currentGlobalBgId para el siguiente slide
+                bgImageIdChunk = currentGlobalBgId;
             }
         }
         if (chunk.length > 0) {
@@ -1084,6 +1098,131 @@ function syncSlidesToLyrics() {
     document.getElementById('addTitleSlide').checked = false;
 }
 
+// Sincroniza fondo global usando etiquetas FONDOGENERAL
+function syncGlobalBackground(bgId) {
+    console.log("syncGlobalBackground called with bgId:", bgId);
+    
+    // Usar syncSlidesToLyrics que ya tiene la lógica correcta para estructurar los slides
+    // Primero, actualizar slidesData para que todos los slides tengan el bgImageId del fondo global
+    slidesData.forEach(slide => {
+        slide.bgImageId = bgId;
+    });
+    
+    // Luego sincronizar con el textarea
+    syncSlidesToLyrics();
+    
+    // Reemplazar todas las etiquetas [FONDO:ID] por [FONDOGENERAL:ID]
+    const rawText = document.getElementById('lyricsInput').value;
+    const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const newText = text.replace(/\[FONDO:([^\]]+)\]/gi, `[FONDOGENERAL:${bgId}]`);
+    document.getElementById('lyricsInput').value = newText;
+    
+    console.log("syncGlobalBackground completed, textarea updated");
+}
+
+// Sincroniza solo el cambio de fondo individual sin regenerar todo
+function syncSingleSlideBgChange(slideIndex) {
+    const slide = slidesData[slideIndex];
+    if (!slide) return;
+    
+    // Actualizar solo el tag FONDO en el textarea para este slide específico
+    const rawText = document.getElementById('lyricsInput').value;
+    const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = text.split('\n');
+    
+    // Encontrar el slide correspondiente en el texto
+    let currentSlideIndex = 0;
+    let newText = [];
+    let i = 0;
+    
+    while (i < lines.length && currentSlideIndex <= slideIndex) {
+        let line = lines[i];
+        let isTitle = false;
+        let bgEffect = false;
+        let bgImageId = null;
+        let isBlank = false;
+        let hadFondoGeneral = false;
+        
+        // Procesar tags
+        while (true) {
+            if (line.toUpperCase().startsWith('[TITULO]')) {
+                isTitle = true;
+                line = line.substring(8).trim();
+                continue;
+            }
+            if (line.toUpperCase().startsWith('[FONDO_OSCURO]')) {
+                bgEffect = 'dark';
+                line = line.substring(14).trim();
+                continue;
+            }
+            if (line.toUpperCase().startsWith('[FONDO_CLARO]')) {
+                bgEffect = 'light';
+                line = line.substring(13).trim();
+                continue;
+            }
+            if (line.toUpperCase().startsWith('[VACIO]')) {
+                isBlank = true;
+                line = line.substring(7).trim();
+                continue;
+            }
+            if (line.toUpperCase().startsWith('[FONDOGENERAL:')) {
+                hadFondoGeneral = true;
+                const match = line.match(/^\[FONDOGENERAL:([^\]]+)\]/i);
+                if (match) {
+                    line = line.substring(match[0].length).trim();
+                    continue;
+                }
+            }
+            if (line.toUpperCase().startsWith('[FONDO:')) {
+                const match = line.match(/^\[FONDO:([^\]]+)\]/i);
+                if (match) {
+                    bgImageId = match[1];
+                    line = line.substring(match[0].length).trim();
+                    continue;
+                }
+            }
+            break;
+        }
+        
+        if (line === "" && !isBlank) {
+            i++;
+            continue;
+        }
+        
+        if (currentSlideIndex === slideIndex) {
+            // Este es el slide que queremos modificar
+            let prefix = "";
+            if (isTitle) prefix += "[TITULO]\n";
+            if (bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
+            if (bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
+            // Usar FONDO: para fondos individuales, rompe FONDOGENERAL
+            if (slide.bgImageId) prefix += `[FONDO:${slide.bgImageId}]\n`;
+            if (isBlank) prefix += "[VACIO]";
+            
+            newText.push(prefix + line);
+        } else {
+            // Mantener el slide original
+            let originalPrefix = "";
+            if (isTitle) originalPrefix += "[TITULO]\n";
+            if (bgEffect === 'dark') originalPrefix += "[FONDO_OSCURO]\n";
+            if (bgEffect === 'light') originalPrefix += "[FONDO_CLARO]\n";
+            if (bgImageId) originalPrefix += `[FONDO:${bgImageId}]\n`;
+            else if (hadFondoGeneral) {
+                // Si tenía FONDOGENERAL, mantenerlo
+                originalPrefix += `[FONDOGENERAL:${globalBgImageId}]\n`;
+            }
+            if (isBlank) originalPrefix += "[VACIO]";
+            
+            newText.push(originalPrefix + line);
+        }
+        
+        currentSlideIndex++;
+        i++;
+    }
+    
+    document.getElementById('lyricsInput').value = newText.join('\n\n');
+}
+
 function updateStyles() {
     const font = document.getElementById('fontFamily').value;
     const color = document.getElementById('textColor').value;
@@ -1118,9 +1257,23 @@ function updateStyles() {
     document.querySelectorAll('.slide-preview').forEach(slide => {
         const idx = parseInt(slide.dataset.index);
         const slideObj = slidesData[idx];
-        // Skip if this slide has its own individual background (bgImageId)
+        // Check if this slide has its own background (bgImageId from FONDO: or FONDOGENERAL:)
         const hasOwnBg = slideObj && slideObj.bgImageId && bgRegistry[slideObj.bgImageId];
-        if (!hasOwnBg) {
+        if (hasOwnBg) {
+            // Apply the slide's specific background
+            const bgData = bgRegistry[slideObj.bgImageId];
+            if (slideObj.bgEffect === 'light') {
+                slide.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url(${bgData})`;
+            } else if (slideObj.bgEffect === 'dark') {
+                slide.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${bgData})`;
+            } else {
+                slide.style.backgroundImage = `url(${bgData})`;
+            }
+            slide.style.backgroundSize = 'cover';
+            slide.style.backgroundPosition = 'center';
+            slide.style.backgroundColor = 'transparent';
+        } else {
+            // Fall back to legacy bgImageData if no specific background
             const transparency = document.getElementById('bgTransparency').checked;
             if (bgImageData) {
                 if (transparency) {
@@ -1231,7 +1384,6 @@ function galleryUploadFromPC() {
 }
 
 async function selectGalleryImage(url) {
-    closeGallery();
     document.getElementById('globalLoader').classList.remove('hidden');
     document.getElementById('globalLoader').classList.add('flex');
 
@@ -1246,8 +1398,11 @@ async function selectGalleryImage(url) {
                 const bgId = `gallery_${nextBgId++}`;
                 bgRegistry[bgId] = dataUrl;
                 slidesData[window.targetBgSlideIndex].bgImageId = bgId;
+                // Sync all slides to maintain consistency
                 syncSlidesToLyrics();
                 renderSlides();
+                // Reset target index after use
+                window.targetBgSlideIndex = undefined;
             } else if (galleryMode === 'multi' && selectedSlides.size > 0) {
                 // Assign to all selected slides
                 const bgId = `gallery_${nextBgId++}`;
@@ -1260,12 +1415,19 @@ async function selectGalleryImage(url) {
                 syncSlidesToLyrics();
                 renderSlides();
             } else {
-                // Default: global background
-                bgImageData = dataUrl;
-                updateStyles();
+                // Default: global background - use FONDOGENERAL tag
+                console.log("Applying global background, galleryMode:", galleryMode);
+                const bgId = `global_${nextBgId++}`;
+                bgRegistry[bgId] = dataUrl;
+                globalBgImageId = bgId;
+                console.log("bgId:", bgId, "globalBgImageId:", globalBgImageId);
+                // Add FONDOGENERAL tag to all slides
+                syncGlobalBackground(bgId);
+                renderSlides();
             }
             document.getElementById('globalLoader').classList.add('hidden');
             document.getElementById('globalLoader').classList.remove('flex');
+            closeGallery();
         };
         reader.readAsDataURL(blob);
     } catch (error) {
@@ -1273,6 +1435,7 @@ async function selectGalleryImage(url) {
         alert("Error al cargar imagen. Intenta con otra.");
         document.getElementById('globalLoader').classList.add('hidden');
         document.getElementById('globalLoader').classList.remove('flex');
+        closeGallery();
     }
 }
 
@@ -1380,6 +1543,16 @@ function addToRepertoire() {
             songBgRegistry[s.bgImageId] = bgRegistry[s.bgImageId];
         }
     }
+    
+    // También incluir fondos de inserciones si existen (IDs que empiezan con 'insertion_')
+    let insertionBgCount = 0;
+    for (let bgId in bgRegistry) {
+        if (bgId.startsWith('insertion_') && bgRegistry[bgId]) {
+            songBgRegistry[bgId] = bgRegistry[bgId];
+            insertionBgCount++;
+        }
+    }
+    console.log("Saved insertion backgrounds:", insertionBgCount, "Total bgRegistrySnapshot keys:", Object.keys(songBgRegistry).length);
 
     const songConfig = {
         id: Date.now(),
@@ -1505,9 +1678,11 @@ function loadFromRepertoire(index) {
         bgImageData = st.bgImage;
         document.getElementById('bgTransparency').checked = st.bgTransparency || false;
     }
-    // Restore per-slide backgrounds
+    // Restore per-slide backgrounds - clear first to avoid mixing with other songs
+    bgRegistry = {};
     if (song.bgRegistrySnapshot) {
         Object.assign(bgRegistry, song.bgRegistrySnapshot);
+        console.log("Restored bgRegistrySnapshot with keys:", Object.keys(song.bgRegistrySnapshot));
     }
 
     // Cargar letra (slides) con inserciones procesadas
@@ -1565,7 +1740,7 @@ function removeRepertoireItem(index) {
 let currentInsertionSongIndex = null;
 let insertionHistory = []; // Historial para deshacer
 
-// Función auxiliar para procesar inserciones en una canción
+// Función para procesar inserciones de una canción
 function processSongInsertions(song) {
     if (!song.insertions || song.insertions.length === 0) {
         return song.slides;
@@ -1575,13 +1750,17 @@ function processSongInsertions(song) {
     let insertionIndex = 0;
     
     for (let i = 0; i < song.slides.length; i++) {
-        // Agregar slide actual
         processedSlides.push(song.slides[i]);
         
-        // Verificar si hay inserción después de este slide
+        // Verificar si hay inserciones después de este slide
         while (insertionIndex < song.insertions.length && 
                song.insertions[insertionIndex].afterSlide === i) {
             const insertion = song.insertions[insertionIndex];
+            
+            // Restaurar fondos de esta inserción al bgRegistry global
+            if (insertion.bgRegistry) {
+                Object.assign(bgRegistry, insertion.bgRegistry);
+            }
             
             // Agregar todas las diapositivas copiadas de la inserción
             if (insertion.slides && insertion.slides.length > 0) {
@@ -1595,6 +1774,44 @@ function processSongInsertions(song) {
     }
     
     return processedSlides;
+}
+
+// Función auxiliar para mezclar bgRegistry de inserciones
+function mergeInsertionBgRegistries(song) {
+    if (!song.insertions || song.insertions.length === 0) {
+        return;
+    }
+    
+    // Para cada inserción, necesitamos asegurar que los fondos existan en bgRegistry
+    // Las inserciones copian slides con bgImageId, pero esos IDs podrían no existir
+    // en el bgRegistry de la canción principal
+    // Como las inserciones son copias independientes, generamos nuevos IDs únicos
+    let idMap = {};
+    let nextId = nextBgId;
+    
+    song.insertions.forEach(insertion => {
+        insertion.slides.forEach(slide => {
+            if (slide.bgImageId) {
+                // Si este ID ya fue mapeado, usar el nuevo ID
+                if (idMap[slide.bgImageId]) {
+                    slide.bgImageId = idMap[slide.bgImageId];
+                } else {
+                    // Generar nuevo ID único para esta canción
+                    const newId = `insertion_${nextId++}`;
+                    idMap[slide.bgImageId] = newId;
+                    
+                    // Copiar los datos del fondo si existen en algún lugar
+                    // Nota: Como las inserciones son copias independientes, no tenemos acceso
+                    // al bgRegistry original. Los fondos deberían haberse copiado como parte
+                    // de la inserción, pero necesitamos asegurarnos de que existan.
+                    // Por ahora, si el fondo no existe, el slide no tendrá fondo.
+                    slide.bgImageId = newId;
+                }
+            }
+        });
+    });
+    
+    nextBgId = nextId;
 }
 
 function openInsertionModal(songIndex) {
@@ -1705,9 +1922,50 @@ function addInsertion() {
     if (!song.insertions) song.insertions = [];
     
     // Copiar las diapositivas de la canción a insertar (copia independiente)
+    // También copiar los fondos por diapositiva si existen
+    // IMPORTANTE: Convertir FONDOGENERAL a FONDO individual para evitar conflictos
+    // cuando se mezclan canciones con diferentes fondos globales
+    
+    // Primero, detectar si hay un fondo global (todos los slides tienen el mismo bgImageId)
+    let globalBgId = null;
+    if (insertedSong.slides.length > 0) {
+        const firstSlide = insertedSong.slides[0];
+        if (typeof firstSlide !== 'string' && firstSlide.bgImageId) {
+            const allHaveSameBg = insertedSong.slides.every(s => {
+                if (typeof s === 'string') return false;
+                return s.bgImageId === firstSlide.bgImageId;
+            });
+            if (allHaveSameBg) {
+                globalBgId = firstSlide.bgImageId;
+            }
+        }
+    }
+    
+    // Crear un bgRegistry local para esta inserción
+    let insertionBgRegistry = {};
+    
     const copiedSlides = insertedSong.slides.map(slide => {
         if (typeof slide === 'string') return { text: slide, isTitle: false };
-        return { ...slide };
+        const slideCopy = { ...slide };
+        
+        // Si el slide tiene un fondo individual, copiar los datos del fondo
+        if (slide.bgImageId && insertedSong.bgRegistrySnapshot && insertedSong.bgRegistrySnapshot[slide.bgImageId]) {
+            // Si es parte de un fondo global, crear un ID único para este slide específico
+            // para evitar conflictos con otros FONDOGLOBALES
+            if (globalBgId && slide.bgImageId === globalBgId) {
+                const newBgId = `insertion_slide_${nextBgId++}`;
+                insertionBgRegistry[newBgId] = insertedSong.bgRegistrySnapshot[slide.bgImageId];
+                bgRegistry[newBgId] = insertedSong.bgRegistrySnapshot[slide.bgImageId];
+                slideCopy.bgImageId = newBgId;
+            } else {
+                // Es un fondo individual normal
+                const newBgId = `insertion_${nextBgId++}`;
+                insertionBgRegistry[newBgId] = insertedSong.bgRegistrySnapshot[slide.bgImageId];
+                bgRegistry[newBgId] = insertedSong.bgRegistrySnapshot[slide.bgImageId];
+                slideCopy.bgImageId = newBgId;
+            }
+        }
+        return slideCopy;
     });
     
     // Verificar si ya existe una inserción en la misma posición
@@ -1715,8 +1973,9 @@ function addInsertion() {
     if (existingIndex !== -1) {
         song.insertions[existingIndex].slides = copiedSlides;
         song.insertions[existingIndex].songName = insertedSong.name;
+        song.insertions[existingIndex].bgRegistry = insertionBgRegistry;
     } else {
-        song.insertions.push({ afterSlide: slideIndex, slides: copiedSlides, songName: insertedSong.name });
+        song.insertions.push({ afterSlide: slideIndex, slides: copiedSlides, songName: insertedSong.name, bgRegistry: insertionBgRegistry });
     }
     
     // Ordenar inserciones por posición
@@ -1791,7 +2050,8 @@ function sendAllRepertoireToEditor() {
         if (!confirm("Esto reemplazará la canción actual en el editor por todo el repertorio. ¿Continuar?")) return;
     }
     
-    // Merge bgRegistry from all songs
+    // Merge bgRegistry from all songs - clear first to avoid mixing
+    bgRegistry = {};
     let mergedBgRegistry = {};
     repertoireList.forEach(song => {
         if (song.bgRegistrySnapshot) {
