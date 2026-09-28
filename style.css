@@ -638,3 +638,295 @@
     border-color: #8b5cf6 !important;
     border-width: 2px;
 }
+
+/* === Dictado por voz (micrófono) === */
+
+/* === Actualización 2: dictado editor + audio del sistema === */
+
+/* === Actualización 3: letra editable + responsive === */
+#lyricsFullscreenText {
+    overflow-wrap: anywhere;
+    caret-color: #60a5fa;
+}
+#lyricsFullscreenText[contenteditable="true"]:focus,
+#lyricsFullscreenText[contenteditable="plaintext-only"]:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.55);
+    outline-offset: 6px;
+    border-radius: 8px;
+}
+#lyricsFullscreenText:empty::before {
+    content: 'Escribe o dicta la letra aquí…';
+    color: #64748b;
+}
+
+/* Fix scroll en pantalla completa */
+#lyricsFullscreenModal .flex-1 {
+  min-height: 0;
+}
+#lyricsFullscreenContent {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+#lyricsFullscreenText {
+  min-height: 100%;
+}
+
+/* Responsive fix v7 - pantalla completa */
+@media (max-width: 640px) {
+  #lyricsFullscreenModal {
+    padding: 0.5rem !important;
+    align-items: flex-start !important;
+  }
+  #lyricsFullscreenModal > div {
+    min-height: 95vh;
+    max-height: 98vh;
+    margin: 0;
+  }
+  #lyricsFullscreenContent {
+    padding: 1rem !important;
+  }
+}
+#lyricsFullscreenModal .flex-wrap {
+  gap: 0.375rem;
+}
+
+/* Model Manager v9 */
+
+/* v10 - Header compact icon-only + responsive scroll fix */
+#lyricsFullscreenModal {
+  overscroll-behavior: contain;
+}
+#lyricsFullscreenModal > div {
+  display: flex;
+  flex-direction: column;
+}
+#lyricsFullscreenContent {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  #lyricsFullscreenModal {
+    padding: 0 !important;
+  }
+  #lyricsFullscreenModal > div {
+    border-radius: 0 !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    height: 100dvh !important;
+  }
+}
+
+/* v11 - Mobile search toggle + good default height + placeholder */
+#fullscreenSearchContainer {
+  animation: slideDown 0.2s ease;
+}
+#lyricsFullscreenText[data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  color: #64748b;
+  font-style: italic;
+  pointer-events: none;
+}
+#lyricsFullscreenText {
+  line-height: 1.6;
+}
+#lyricsFullscreenContent {
+  background: linear-gradient(to bottom, rgba(30,41,59,0.5), rgba(15,23,42,0.3));
+}
+/* Mobile: reduce search bar height */
+@media (max-width: 640px) {
+  #fullscreenSearchContainer {
+    padding: 0.5rem !important;
+  }
+  #fullscreenSearchContainer input {
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
+  }
+  #lyricsFullscreenText {
+    min-height: 55vh !important;
+    font-size: 16px !important;
+  }
+  #lyricsFullscreenContent {
+    min-height: 320px !important;
+    padding: 1rem !important;
+  }
+  #fullscreenBarsContainer {
+    font-size: 10px;
+  }
+}
+/* Ensure good height even empty */
+#lyricsFullscreenText:empty {
+  min-height: 50vh;
+}
+
+/* v15 - Nuevas funciones 1,3,7,8,11 */
+.essay-active {
+    box-shadow: 0 0 0 4px #fbbf24, 0 10px 20px rgba(0,0,0,0.3) !important;
+    animation: essayPulse 1.5s ease-in-out infinite;
+}
+@keyframes essayPulse {
+    0%, 100% { box-shadow: 0 0 0 4px #fbbf24, 0 10px 20px rgba(0,0,0,0.3); }
+    50% { box-shadow: 0 0 0 6px #f59e0b, 0 10px 25px rgba(0,0,0,0.4); }
+}
+#dropOverlay {
+    backdrop-filter: blur(8px);
+}
+#autoSaveStatus {
+    transition: all 0.3s ease;
+}
+#recentSongsList .group:hover {
+    transform: translateX(2px);
+}
+#essayModeIndicator {
+    animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+
+/* === v15.2 - Pantalla completa lectura bonita === */
+#lyricsFullscreenModal {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+#lyricsFullscreenModal > div {
+    animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+#lyricsFullscreenContent {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(71,85,105,0.5) transparent;
+}
+
+#lyricsFullscreenContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+#lyricsFullscreenContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#lyricsFullscreenContent::-webkit-scrollbar-thumb {
+    background: rgba(71,85,105,0.5);
+    border-radius: 10px;
+}
+
+#lyricsFullscreenContent::-webkit-scrollbar-thumb:hover {
+    background: rgba(71,85,105,0.8);
+}
+
+#lyricsFullscreenText {
+    /* Beautiful typography */
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.9;
+    letter-spacing: 0.015em;
+    word-spacing: 0.02em;
+    /* Ensure full width, not vertical */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    /* Placeholder */
+    position: relative;
+}
+
+#lyricsFullscreenText:empty::before,
+#lyricsFullscreenText[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #475569;
+    font-style: italic;
+    opacity: 0.8;
+    pointer-events: none;
+    display: block;
+}
+
+#lyricsFullscreenText:focus {
+    outline: none;
+}
+
+/* Selection beautiful */
+#lyricsFullscreenText::selection {
+    background: rgba(59,130,246,0.3);
+    color: white;
+}
+
+/* Focus ring subtle */
+#lyricsFullscreenText:focus-visible {
+    box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06), 0 15px 50px -15px rgba(59,130,246,0.2), 0 0 0 1px rgba(59,130,246,0.3);
+}
+
+/* Mobile optimizations for reading */
+@media (max-width: 640px) {
+    #lyricsFullscreenModal {
+        padding: 0 !important;
+    }
+    #lyricsFullscreenModal > div {
+        border-radius: 0 !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        max-width: 100% !important;
+    }
+    #lyricsFullscreenText {
+        font-size: 17px !important;
+        line-height: 1.8 !important;
+        padding: 1.25rem !important;
+        border-radius: 16px !important;
+        min-height: 60vh !important;
+    }
+    #lyricsFullscreenContent {
+        padding: 0 !important;
+    }
+}
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 1024px) {
+    #lyricsFullscreenText {
+        font-size: 18px !important;
+        padding: 2rem !important;
+    }
+}
+
+/* Desktop large - more breathing room */
+@media (min-width: 1024px) {
+    #lyricsFullscreenText {
+        font-size: 20px !important;
+        line-height: 1.9 !important;
+        letter-spacing: 0.015em;
+    }
+}
+
+/* Ensure no vertical writing mode */
+#lyricsFullscreenText {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    direction: ltr !important;
+}
+
+/* Beautiful scrollbar for modal */
+#lyricsFullscreenModal .custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+#lyricsFullscreenModal .custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(100,116,139,0.4);
+    border-radius: 8px;
+}
+

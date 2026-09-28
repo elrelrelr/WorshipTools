@@ -4,15 +4,15 @@ console.log("Script.js cargado correctamente.");
 // Rutas de imágenes que realmente existen en la carpeta
 const galleryImages = [
     // Fondos
-    'imagenes/fondo1.jpg', 'imagenes/fondo2.jpg', 'imagenes/fondo5.jpg', 'imagenes/fondo6.jpg', 
-    'imagenes/fondo7.jpg', 'imagenes/fondo8.jpg', 'imagenes/fondo9.jpg', 'imagenes/fondo10.jpg', 
-    'imagenes/fondo11.jpg', 'imagenes/fondo12.jpg', 'imagenes/fondo13.jpg', 'imagenes/fondo14.jpg', 
-    'imagenes/fondo15.jpg', 'imagenes/fondo16.jpg', 'imagenes/fondo17.jpg', 'imagenes/fondo18.jpg', 
-    'imagenes/fondo19.jpg', 'imagenes/fondo20.jpg', 'imagenes/fondo21.jpg', 'imagenes/fondo22.jpg', 
-    'imagenes/fondo23.jpg', 'imagenes/fondo24.jpg', 'imagenes/fondo25.jpg', 'imagenes/fondo26.jpg', 
+    'imagenes/fondo1.jpg', 'imagenes/fondo2.jpg', 'imagenes/fondo5.jpg', 'imagenes/fondo6.jpg',
+    'imagenes/fondo7.jpg', 'imagenes/fondo8.jpg', 'imagenes/fondo9.jpg', 'imagenes/fondo10.jpg',
+    'imagenes/fondo11.jpg', 'imagenes/fondo12.jpg', 'imagenes/fondo13.jpg', 'imagenes/fondo14.jpg',
+    'imagenes/fondo15.jpg', 'imagenes/fondo16.jpg', 'imagenes/fondo17.jpg', 'imagenes/fondo18.jpg',
+    'imagenes/fondo19.jpg', 'imagenes/fondo20.jpg', 'imagenes/fondo21.jpg', 'imagenes/fondo22.jpg',
+    'imagenes/fondo23.jpg', 'imagenes/fondo24.jpg', 'imagenes/fondo25.jpg', 'imagenes/fondo26.jpg',
     'imagenes/fondo27.jpg',
     // GIFs (Se han verificado que solo existen del 1 al 7)
-    'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif3.gif', 'imagenes/gif4.gif', 
+    'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif3.gif', 'imagenes/gif4.gif',
     'imagenes/gif5.gif', 'imagenes/gif6.gif', 'imagenes/gif7.gif', 'imagenes/gif8.gif', 'imagenes/gif9.gif', 'imagenes/gif10.gif', 'imagenes/gif11.gif', 'imagenes/gif12.gif'
 ];
 
@@ -74,15 +74,13 @@ function toggleTheme() {
 
 function updateThemeIcon() {
     const icon = document.getElementById('themeIcon');
-    const iconMobile = document.getElementById('themeIconMobile');
     const themeText = document.getElementById('themeText');
+    if (!icon) return;
     if (isDarkMode) {
         icon.className = 'fa-solid fa-sun text-yellow-100';
-        if (iconMobile) iconMobile.className = 'fa-solid fa-sun text-yellow-100';
         if (themeText) themeText.innerText = 'Modo Claro';
     } else {
         icon.className = 'fa-solid fa-moon text-slate-700 dark:text-slate-200';
-        if (iconMobile) iconMobile.className = 'fa-solid fa-moon text-slate-700';
         if (themeText) themeText.innerText = 'Modo Oscuro';
     }
 }
@@ -175,7 +173,7 @@ function toTitleCase(str) {
 function generateTag() {
     let name = document.getElementById('songName').value.trim();
     let author = document.getElementById('songAuthor').value.trim();
-    
+
     // Limpiar cualquier etiqueta que pueda haber sido pegada accidentalmente
     if (name.startsWith('#')) {
         // Extraer solo el nombre de la canción de la etiqueta
@@ -184,7 +182,7 @@ function generateTag() {
             name = tagMatch[1].trim();
         }
     }
-    
+
     const cleanName = name ? toTitleCase(name) : "";
     const cleanAuthor = author ? toTitleCase(author) : "";
 
@@ -277,59 +275,42 @@ function insertTitleSlide() {
     processLyrics();
 }
 
-function processLyrics() {
-    generateTag();
-    refreshSlidesFromCurrentState();
-}
-// Función para actualizar la vista previa en tiempo real cuando cambian los checkboxes
-function updateSlidesRealTime() {
-    const rawText = document.getElementById('lyricsInput').value;
-    if (!rawText.trim() && !document.getElementById('addBlankSlide').checked && !document.getElementById('addTitleSlide').checked) {
-        // Si no hay letra y ambos checkboxes están desactivados, mostrar vacío
-        slidesData = [];
-        renderSlides();
-        renderQuickCopyList();
-        return;
-    }
-    
-    // Llamar a la función que actualiza las diapositivas (sin regenerar desde el texto si no es necesario)
-    refreshSlidesFromCurrentState();
-}
+// NOTA: processLyrics() y updateSlidesRealTime() están definidos una sola vez más abajo (duplicados eliminados).
 
 // Función que refresca las diapositivas manteniendo la letra actual
 // --- ACTUALIZACIÓN EN TIEMPO REAL PARA CHECKBOXES ---
 function refreshSlidesFromCurrentState() {
     const rawText = document.getElementById('lyricsInput').value;
     const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
+
     const maxLines = parseInt(document.getElementById('linesPerSlide').value) || 1;
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
-    
+
     const songName = toTitleCase(document.getElementById('songName').value || "Título");
     const songAuthor = toTitleCase(document.getElementById('songAuthor').value || "");
-    
+
     let newSlidesData = [];
-    
+
     if (addBlank) newSlidesData.push({ text: " ", isTitle: false, bgEffect: false });
     if (addTitle) {
         const titleText = songAuthor ? `${songName}\n(${songAuthor})` : songName;
         newSlidesData.push({ text: titleText, isTitle: true, bgEffect: false });
     }
-    
+
     if (text.trim().length > 0) {
         const lines = text.split('\n').map(l => l.trim());
-        
+
         let chunk = [];
         let isTitleChunk = false;
         let bgEffectChunk = false;
         let bgImageIdChunk = null;
         let currentGlobalBgId = null; // Para FONDOGENERAL
-        
+
         for (let idx = 0; idx < lines.length; idx++) {
             let line = lines[idx];
             if (line === "") continue;
-            
+
             let isBlankTag = false;
             while (true) {
                 if (line.toUpperCase().startsWith('[TITULO]')) {
@@ -377,7 +358,7 @@ function refreshSlidesFromCurrentState() {
                 }
                 break;
             }
-            
+
             if (isBlankTag) {
                 if (chunk.length > 0) {
                     if (isTitleChunk && songAuthor) {
@@ -396,11 +377,11 @@ function refreshSlidesFromCurrentState() {
                 bgImageIdChunk = null;
                 if (line === "") continue;
             }
-            
+
             if (line === "") continue;
-            
+
             chunk.push(line);
-            
+
             let flush = chunk.length >= maxLines;
             if (isTitleChunk && chunk.length === 1) {
                 let hasAuthorNext = false;
@@ -419,7 +400,7 @@ function refreshSlidesFromCurrentState() {
             } else if (isTitleChunk && chunk.length >= 2) {
                 flush = true;
             }
-            
+
             if (flush) {
                 if (isTitleChunk && songAuthor) {
                     for (let i = 0; i < chunk.length; i++) {
@@ -447,7 +428,7 @@ function refreshSlidesFromCurrentState() {
             newSlidesData.push({ text: chunk.join('\n'), isTitle: isTitleChunk, bgEffect: bgEffectChunk, bgImageId: bgImageIdChunk });
         }
     }
-    
+
     slidesData = newSlidesData;
     renderSlides();
     renderQuickCopyList();
@@ -467,7 +448,7 @@ function updateSlidesRealTime() {
         renderQuickCopyList();
         return;
     }
-    
+
     refreshSlidesFromCurrentState();
     syncSlidesToLyrics();
 }
@@ -476,6 +457,14 @@ function updateSlidesRealTime() {
 function processLyrics() {
     generateTag();
     refreshSlidesFromCurrentState();
+    // v14: agregar a recientes y auto-guardar
+    try{
+        const name = document.getElementById('songName').value.trim() || 'Sin título';
+        const author = document.getElementById('songAuthor').value.trim();
+        const lyrics = document.getElementById('lyricsInput').value.trim();
+        if(lyrics) addToRecentSongs(name, author, lyrics);
+        saveSessionToLocalStorage();
+    }catch(e){ console.warn('recent/save', e); }
 }
 
 // NUEVA FUNCIÓN: Corrige ortografía, capitalización y evita duplicados con la portada
@@ -493,10 +482,10 @@ function cleanAndCorrectLyrics() {
     lines = lines.filter(line => {
         const l = line.trim().toLowerCase();
         if (!l) return true; // Mantener líneas vacías para separación
-        
+
         // Quitar etiquetas de metadatos comunes que vienen al pegar de webs de letras
         if (l.startsWith('título:') || l.startsWith('artista:') || l.startsWith('autor:')) return false;
-        
+
         return true;
     });
 
@@ -564,22 +553,282 @@ function cleanAndCorrectLyrics() {
             { bad: /\bProjimo\b/gi, good: "Prójimo" },
 
             // Errores de tildación "excesiva" o incorrecta (RAE)
-            { bad: /\bDíos\b/gi, good: "Dios" },    // Dios no lleva tilde
-            { bad: /\bTi\b/gi, good: "ti" },        // ti no lleva tilde
-            { bad: /\bFe\b/gi, good: "fe" },        // fe no lleva tilde
-            { bad: /\bDio\b/gi, good: "dio" },      // dio no lleva tilde
-            { bad: /\bVio\b/gi, good: "vio" },      // vio no lleva tilde
-            { bad: /\bFue\b/gi, good: "fue" },      // fue no lleva tilde
-            { bad: /\bFui\b/gi, good: "fui" },      // fui no lleva tilde
-            { bad: /\bS[oó]lo\b/gi, good: "Solo" }, // Solo ya no lleva tilde según RAE
-            { bad: /\bEspirítu\b/gi, good: "Espíritu" }, // Error de tilde en la i
-            { bad: /\bAngel\b/gi, good: "Ángel" }
+            { bad: /\bDíos\b/gi, good: "Dios" },
+            { bad: /\bTi\b/gi, good: "ti" },
+            { bad: /\bFe\b/gi, good: "fe" },
+            { bad: /\bDio\b/gi, good: "dio" },
+            { bad: /\bVio\b/gi, good: "vio" },
+            { bad: /\bFue\b/gi, good: "fue" },
+            { bad: /\bFui\b/gi, good: "fui" },
+            { bad: /\bS[oó]lo\b/gi, good: "Solo" },
+            { bad: /\bEspirítu\b/gi, good: "Espíritu" },
+            { bad: /\bAngel\b/gi, good: "Ángel" },
+
+            // NUEVAS - Alabanza y adoracion extendida
+            { bad: /\bAleluya\b/gi, good: "Aleluya" },
+            { bad: /\bAleluia\b/gi, good: "Aleluya" },
+            { bad: /\bHosana\b/gi, good: "Hosanna" },
+            { bad: /\bOsana\b/gi, good: "Hosanna" },
+            { bad: /\bJehova\b/gi, good: "Jehová" },
+            { bad: /\bYave\b/gi, good: "Yahvé" },
+            { bad: /\bYahve\b/gi, good: "Yahvé" },
+            { bad: /\bYeshua\b/gi, good: "Yeshúa" },
+            { bad: /\bSanto\b/gi, good: "Santo" },
+            { bad: /\bDigno\b/gi, good: "Digno" },
+            { bad: /\bGloria\b/gi, good: "Gloria" },
+            { bad: /\bHonra\b/gi, good: "Honra" },
+            { bad: /\bPoder\b/gi, good: "Poder" },
+            { bad: /\bMajestad\b/gi, good: "Majestad" },
+            { bad: /\bAlabanza\b/gi, good: "Alabanza" },
+            { bad: /\bAdorador\b/gi, good: "Adorador" },
+            { bad: /\bMisericordia\b/gi, good: "Misericordia" },
+            { bad: /\bGracia\b/gi, good: "Gracia" },
+            { bad: /\bFidelidad\b/gi, good: "Fidelidad" },
+            { bad: /\bBondad\b/gi, good: "Bondad" },
+            { bad: /\bVictoria\b/gi, good: "Victoria" },
+            { bad: /\bVencedor\b/gi, good: "Vencedor" },
+            { bad: /\bRey de reyes\b/gi, good: "Rey de reyes" },
+            { bad: /\bSenor de senores\b/gi, good: "Señor de señores" },
+            { bad: /\bEmanuel\b/gi, good: "Emanuel" },
+            { bad: /\bEmmanuel\b/gi, good: "Emanuel" },
+            { bad: /\bCristo\b/gi, good: "Cristo" },
+            { bad: /\bMesias\b/gi, good: "Mesías" },
+            { bad: /\bSoberano\b/gi, good: "Soberano" },
+            { bad: /\bEterno\b/gi, good: "Eterno" },
+            { bad: /\bFiel\b/gi, good: "Fiel" },
+            { bad: /\bJusto\b/gi, good: "Justo" },
+            { bad: /\bSanto Espiritu\b/gi, good: "Santo Espíritu" },
+            { bad: /\bEspiritu Santo\b/gi, good: "Espíritu Santo" },
+
+            // Verbos de adoracion
+            { bad: /\bExalto\b/gi, good: "Exalto" },
+            { bad: /\bExaltare\b/gi, good: "Exaltaré" },
+            { bad: /\bGlorifico\b/gi, good: "Glorifico" },
+            { bad: /\bGlorificare\b/gi, good: "Glorificaré" },
+            { bad: /\bMagnifico\b/gi, good: "Magnifico" },
+            { bad: /\bProclamo\b/gi, good: "Proclamo" },
+            { bad: /\bRindo\b/gi, good: "Rindo" },
+            { bad: /\bEntrego\b/gi, good: "Entrego" },
+            { bad: /\bAnhelo\b/gi, good: "Anhelo" },
+            { bad: /\bConfio\b/gi, good: "Confío" },
+            { bad: /\bCreo\b/gi, good: "Creo" },
+            { bad: /\bEspero\b/gi, good: "Espero" },
+
+            // Palabras comunes mal escritas
+            { bad: /\bBendicion(es)?\b/gi, good: "Bendición" },
+            { bad: /\bCancion(es)?\b/gi, good: "Canción" },
+            { bad: /\bCorazon(es)?\b/gi, good: "Corazón" },
+            { bad: /\bOracion(es)?\b/gi, good: "Oración" },
+            { bad: /\bAdoracion\b/gi, good: "Adoración" },
+            { bad: /\bAlabanza(s)?\b/gi, good: "Alabanza" },
+            { bad: /\bPresencia\b/gi, good: "Presencia" },
+            { bad: /\bPromesa(s)?\b/gi, good: "Promesa" },
+            { bad: /\bMision\b/gi, good: "Misión" },
+            { bad: /\bVision\b/gi, good: "Visión" },
+            { bad: /\bUncion\b/gi, good: "Unción" },
+            { bad: /\bPerdon\b/gi, good: "Perdón" },
+            { bad: /\bRazon\b/gi, good: "Razón" },
+            { bad: /\bCruz\b/gi, good: "Cruz" },
+            { bad: /\bSangre\b/gi, good: "Sangre" },
+            { bad: /\bCordero\b/gi, good: "Cordero" },
+            { bad: /\bLeon\b/gi, good: "León" },
+            { bad: /\bTrono\b/gi, good: "Trono" },
+            { bad: /\bAltar\b/gi, good: "Altar" },
+            { bad: /\bCielo(s)?\b/gi, good: "Cielo" },
+            { bad: /\bTierra\b/gi, good: "Tierra" },
+            { bad: /\bEternidad\b/gi, good: "Eternidad" },
+            { bad: /\bInfinito\b/gi, good: "Infinito" },
+            { bad: /\bInmenso\b/gi, good: "Inmenso" },
+            { bad: /\bGrande\b/gi, good: "Grande" },
+            { bad: /\bPoderoso\b/gi, good: "Poderoso" },
+            { bad: /\bMaravilloso\b/gi, good: "Maravilloso" },
+            { bad: /\bHermoso\b/gi, good: "Hermoso" },
+            { bad: /\bPrecioso\b/gi, good: "Precioso" },
+
+            // === EXTENDIDO: Muchas palabras con tilde para alabanza ===
+            { bad: /\bAccion\b/gi, good: "Acción" },
+            { bad: /\bReaccion\b/gi, good: "Reacción" },
+            { bad: /\bAfliccion\b/gi, good: "Aflicción" },
+            { bad: /\bAlegria\b/gi, good: "Alegría" },
+            { bad: /\bAgonia\b/gi, good: "Agonía" },
+            { bad: /\bAparicion\b/gi, good: "Aparición" },
+            { bad: /\bAtencion\b/gi, good: "Atención" },
+            { bad: /\bAtraccion\b/gi, good: "Atracción" },
+            { bad: /\bBendicion\b/gi, good: "Bendición" },
+            { bad: /\bBusqueda\b/gi, good: "Búsqueda" },
+            { bad: /\bCelebracion\b/gi, good: "Celebración" },
+            { bad: /\bCirculacion\b/gi, good: "Circulación" },
+            { bad: /\bCompasion\b/gi, good: "Compasión" },
+            { bad: /\bCondicion\b/gi, good: "Condición" },
+            { bad: /\bConfesion\b/gi, good: "Confesión" },
+            { bad: /\bConfirmacion\b/gi, good: "Confirmación" },
+            { bad: /\bCongregacion\b/gi, good: "Congregación" },
+            { bad: /\bConexion\b/gi, good: "Conexión" },
+            { bad: /\bConsagracion\b/gi, good: "Consagración" },
+            { bad: /\bConsolacion\b/gi, good: "Consolación" },
+            { bad: /\bConviccion\b/gi, good: "Convicción" },
+            { bad: /\bDedicacion\b/gi, good: "Dedicación" },
+            { bad: /\bDependencia\b/gi, good: "Dependencia" },
+            { bad: /\bDevocion\b/gi, good: "Devoción" },
+            { bad: /\bDistincion\b/gi, good: "Distinción" },
+            { bad: /\bDonacion\b/gi, good: "Donación" },
+            { bad: /\bEdificacion\b/gi, good: "Edificación" },
+            { bad: /\bEleccion\b/gi, good: "Elección" },
+            { bad: /\bElevacion\b/gi, good: "Elevación" },
+            { bad: /\bEmocion\b/gi, good: "Emoción" },
+            { bad: /\bEncarnacion\b/gi, good: "Encarnación" },
+            { bad: /\bEscogido\b/gi, good: "Escogido" },
+            { bad: /\bExpiacion\b/gi, good: "Expiación" },
+            { bad: /\bExtension\b/gi, good: "Extensión" },
+            { bad: /\bFormacion\b/gi, good: "Formación" },
+            { bad: /\bFundacion\b/gi, good: "Fundación" },
+            { bad: /\bGeneracion\b/gi, good: "Generación" },
+            { bad: /\bGlorificacion\b/gi, good: "Glorificación" },
+            { bad: /\bHabitacion\b/gi, good: "Habitación" },
+            { bad: /\bHumillacion\b/gi, good: "Humillación" },
+            { bad: /\bIluminacion\b/gi, good: "Iluminación" },
+            { bad: /\bInspiracion\b/gi, good: "Inspiración" },
+            { bad: /\bIntercesion\b/gi, good: "Intercesión" },
+            { bad: /\bInvitacion\b/gi, good: "Invitación" },
+            { bad: /\bInvocacion\b/gi, good: "Invocación" },
+            { bad: /\bJustificacion\b/gi, good: "Justificación" },
+            { bad: /\bMansion\b/gi, good: "Mansión" },
+            { bad: /\bMeditacion\b/gi, good: "Meditación" },
+            { bad: /\bNegacion\b/gi, good: "Negación" },
+            { bad: /\bObligacion\b/gi, good: "Obligación" },
+            { bad: /\bPeticion\b/gi, good: "Petición" },
+            { bad: /\bPorcion\b/gi, good: "Porción" },
+            { bad: /\bPredicacion\b/gi, good: "Predicación" },
+            { bad: /\bPreparacion\b/gi, good: "Preparación" },
+            { bad: /\bPresentacion\b/gi, good: "Presentación" },
+            { bad: /\bProvision\b/gi, good: "Provisión" },
+            { bad: /\bPurificacion\b/gi, good: "Purificación" },
+            { bad: /\bReconciliacion\b/gi, good: "Reconciliación" },
+            { bad: /\bReflexion\b/gi, good: "Reflexión" },
+            { bad: /\bRegeneracion\b/gi, good: "Regeneración" },
+            { bad: /\bRelacion\b/gi, good: "Relación" },
+            { bad: /\bRenovacion\b/gi, good: "Renovación" },
+            { bad: /\bReparacion\b/gi, good: "Reparación" },
+            { bad: /\bRestauracion\b/gi, good: "Restauración" },
+            { bad: /\bRevelacion\b/gi, good: "Revelación" },
+            { bad: /\bSantificacion\b/gi, good: "Santificación" },
+            { bad: /\bSatisfaccion\b/gi, good: "Satisfacción" },
+            { bad: /\bSituacion\b/gi, good: "Situación" },
+            { bad: /\bTransmision\b/gi, good: "Transmisión" },
+            { bad: /\bTransformacion\b/gi, good: "Transformación" },
+
+            // Verbos futuros con tilde
+            { bad: /\bAlabare\b/gi, good: "Alabaré" },
+            { bad: /\bAdorare\b/gi, good: "Adoraré" },
+            { bad: /\bAmare\b/gi, good: "Amaré" },
+            { bad: /\bAnhelare\b/gi, good: "Anhelaré" },
+            { bad: /\bBuscare\b/gi, good: "Buscaré" },
+            { bad: /\bCantare\b/gi, good: "Cantaré" },
+            { bad: /\bClamare\b/gi, good: "Clamaré" },
+            { bad: /\bConfiare\b/gi, good: "Confiaré" },
+            { bad: /\bCreere\b/gi, good: "Creeré" },
+            { bad: /\bDanzare\b/gi, good: "Danzaré" },
+            { bad: /\bDeclarare\b/gi, good: "Declararé" },
+            { bad: /\bEntregare\b/gi, good: "Entregaré" },
+            { bad: /\bEsperare\b/gi, good: "Esperaré" },
+            { bad: /\bExaltare\b/gi, good: "Exaltaré" },
+            { bad: /\bGlorificare\b/gi, good: "Glorificaré" },
+            { bad: /\bHabitare\b/gi, good: "Habitaré" },
+            { bad: /\bLevantare\b/gi, good: "Levantaré" },
+            { bad: /\bMorare\b/gi, good: "Moraré" },
+            { bad: /\bPostrare\b/gi, good: "Postraré" },
+            { bad: /\bProclamare\b/gi, good: "Proclamaré" },
+            { bad: /\bRendire\b/gi, good: "Rendiré" },
+            { bad: /\bRestaurare\b/gi, good: "Restauraré" },
+            { bad: /\bSeguire\b/gi, good: "Seguiré" },
+            { bad: /\bServire\b/gi, good: "Serviré" },
+            { bad: /\bTestificare\b/gi, good: "Testificaré" },
+            { bad: /\bVencere\b/gi, good: "Venceré" },
+            { bad: /\bVivire\b/gi, good: "Viviré" },
+            { bad: /\bVolvere\b/gi, good: "Volveré" },
+
+            // Pasado con tilde
+            { bad: /\bAmo\b/gi, good: "Amó" },
+            { bad: /\bAdoro\b/gi, good: "Adoró" },
+            { bad: /\bCanto\b/gi, good: "Cantó" },
+            { bad: /\bCreo\b/gi, good: "Creó" },
+            { bad: /\bEntrego\b/gi, good: "Entregó" },
+            { bad: /\bExalto\b/gi, good: "Exaltó" },
+            { bad: /\bGlorifico\b/gi, good: "Glorificó" },
+            { bad: /\bGuardo\b/gi, good: "Guardó" },
+            { bad: /\bGuio\b/gi, good: "Guió" },
+            { bad: /\bLibro\b/gi, good: "Libró" },
+            { bad: /\bLlevo\b/gi, good: "Llevó" },
+            { bad: /\bMurio\b/gi, good: "Murió" },
+            { bad: /\bNacio\b/gi, good: "Nació" },
+            { bad: /\bPerdono\b/gi, good: "Perdonó" },
+            { bad: /\bResucito\b/gi, good: "Resucitó" },
+            { bad: /\bSalvo\b/gi, good: "Salvó" },
+            { bad: /\bSano\b/gi, good: "Sanó" },
+            { bad: /\bVencio\b/gi, good: "Venció" },
+            { bad: /\bVivio\b/gi, good: "Vivió" },
+
+            // Comunes con tilde
+            { bad: /\bAdemas\b/gi, good: "Además" },
+            { bad: /\bAtras\b/gi, good: "Atrás" },
+            { bad: /\bAdios\b/gi, good: "Adiós" },
+            { bad: /\bAun\b/gi, good: "Aún" },
+            { bad: /\bTambien\b/gi, good: "También" },
+            { bad: /\bDespues\b/gi, good: "Después" },
+            { bad: /\bJamas\b/gi, good: "Jamás" },
+            { bad: /\bMas\b/gi, good: "Más" },
+            { bad: /\bSegun\b/gi, good: "Según" },
+            { bad: /\bDetras\b/gi, good: "Detrás" },
+            { bad: /\bDelante\b/gi, good: "Delante" },
+            { bad: /\bFacil\b/gi, good: "Fácil" },
+            { bad: /\bDificil\b/gi, good: "Difícil" },
+            { bad: /\bUtil\b/gi, good: "Útil" },
+            { bad: /\bInutil\b/gi, good: "Inútil" },
+            { bad: /\bDebil\b/gi, good: "Débil" },
+            { bad: /\bFertil\b/gi, good: "Fértil" },
+            { bad: /\bFragil\b/gi, good: "Frágil" },
+            { bad: /\bHabil\b/gi, good: "Hábil" },
+            { bad: /\bUtil\b/gi, good: "Útil" },
+            { bad: /\bAngel\b/gi, good: "Ángel" },
+            { bad: /\bArbol\b/gi, good: "Árbol" },
+            { bad: /\bCaliz\b/gi, good: "Cáliz" },
+            { bad: /\bCaracter\b/gi, good: "Carácter" },
+            { bad: /\bCarcel\b/gi, good: "Cárcel" },
+            { bad: /\bCantico\b/gi, good: "Cántico" },
+            { bad: /\bCesped\b/gi, good: "Césped" },
+            { bad: /\bCodigo\b/gi, good: "Código" },
+            { bad: /\bCredito\b/gi, good: "Crédito" },
+            { bad: /\bCritico\b/gi, good: "Crítico" },
+            { bad: /\bDocil\b/gi, good: "Dócil" },
+            { bad: /\bExtasis\b/gi, good: "Éxtasis" },
+            { bad: /\bHeroe\b/gi, good: "Héroe" },
+            { bad: /\bHumedo\b/gi, good: "Húmedo" },
+            { bad: /\bIdolo\b/gi, good: "Ídolo" },
+            { bad: /\bLapiz\b/gi, good: "Lápiz" },
+            { bad: /\bLicito\b/gi, good: "Lícito" },
+            { bad: /\bLiquido\b/gi, good: "Líquido" },
+            { bad: /\bLirico\b/gi, good: "Lírico" },
+            { bad: /\bMagico\b/gi, good: "Mágico" },
+            { bad: /\bMartir\b/gi, good: "Mártir" },
+            { bad: /\bMedico\b/gi, good: "Médico" },
+            { bad: /\bMerito\b/gi, good: "Mérito" },
+            { bad: /\bMistico\b/gi, good: "Místico" },
+            { bad: /\bMovil\b/gi, good: "Móvil" },
+            { bad: /\bMusica\b/gi, good: "Música" },
+            { bad: /\bMusico\b/gi, good: "Músico" },
+            { bad: /\bBiblico\b/gi, good: "Bíblico" },
+            { bad: /\bApostolico\b/gi, good: "Apostólico" },
+            { bad: /\bEclesiastico\b/gi, good: "Eclesiástico" },
+            { bad: /\bEvangelico\b/gi, good: "Evangélico" },
+            { bad: /\bCatolico\b/gi, good: "Católico" },
+            { bad: /\bCielo\b/gi, good: "Cielo" },
+
         ];
 
         corrections.forEach(c => {
             l = l.replace(c.bad, c.good);
         });
-        
+
         return l;
     });
 
@@ -587,10 +836,10 @@ function cleanAndCorrectLyrics() {
     let cleanedText = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 
     document.getElementById('lyricsInput').value = cleanedText;
-    
+
     // Procesar para actualizar vista previa
     processLyrics();
-    
+
     // Notificación visual rápida
     const btn = document.querySelector('span[onclick="cleanAndCorrectLyrics()"]');
     const originalHTML = btn.innerHTML;
@@ -602,21 +851,21 @@ function clearSlides() {
     // Limpiar Editor
     document.getElementById('lyricsInput').value = '';
     slidesData = [];
-    
+
     // Limpiar Generador de Etiquetas y Recursos
     document.getElementById('songName').value = '';
     document.getElementById('songAuthor').value = '';
     document.getElementById('resultOutput').value = '';
     document.getElementById('exportFileName').value = '';
     generatedTagString = "";
-    
+
     // Resetear opciones automáticas para un inicio limpio
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
-    
+
     // NO resetear bgImageData, currentAlignment, etc. para mantener consistencia
     // bgImageData = null;  // <-- COMENTADO para no perder fondo accidentalmente
-    
+
     renderSlides();
     renderQuickCopyList();
 }
@@ -633,15 +882,15 @@ function renderSlides() {
         const slide = document.createElement('div');
         slide.className = 'slide-preview rounded-lg cursor-grab active:cursor-grabbing';
         slide.dataset.index = i;
-        
+
         const num = document.createElement('div');
         num.className = 'slide-number';
         num.innerText = i + 1;
-        
+
         const content = document.createElement('div');
         content.className = 'slide-content';
         content.innerText = slideObj.text;
-        
+
         // Multi-select checkbox (visible only in selection mode or when selected)
         const checkboxWrap = document.createElement('div');
         checkboxWrap.className = 'slide-checkbox-wrap';
@@ -675,11 +924,11 @@ function renderSlides() {
         };
 
         const btnTitle = createBtn(
-            `title-toggle ${slideObj.isTitle ? 'active' : ''}`, 
-            'fa-solid fa-heading', 
-            slideObj.isTitle ? "Quitar Título" : "Marcar como Título", 
-            (e) => { 
-                e.stopPropagation(); 
+            `title-toggle ${slideObj.isTitle ? 'active' : ''}`,
+            'fa-solid fa-heading',
+            slideObj.isTitle ? "Quitar Título" : "Marcar como Título",
+            (e) => {
+                e.stopPropagation();
                 slidesData[i].isTitle = !slidesData[i].isTitle;
                 syncSlidesToLyrics();
                 renderSlides();
@@ -688,8 +937,8 @@ function renderSlides() {
 
         const btnProject = createBtn('project', 'fa-solid fa-desktop', "Proyectar", (e) => { e.stopPropagation(); openProjection(i); });
         const btnEdit = createBtn('', 'fa-solid fa-pen', "Editar", (e) => { e.stopPropagation(); openEditModal(i); });
-        const btnBg = createBtn('bg-individual', 'fa-solid fa-image', "Fondo propio", (e) => { 
-            e.stopPropagation(); 
+        const btnBg = createBtn('bg-individual', 'fa-solid fa-image', "Fondo propio", (e) => {
+            e.stopPropagation();
             window.targetBgSlideIndex = i;
             openGallery('individual');
         });
@@ -700,7 +949,7 @@ function renderSlides() {
         const dragHandle = document.createElement('div');
         dragHandle.className = 'drag-handle custom-tooltip-container';
         dragHandle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i><span class="custom-tooltip tooltip-left">Arrastrar</span>';
-        
+
         // Per-slide background check - show indicator if this slide has its own bg
         const hasOwnBg = slideObj.bgImageId && bgRegistry[slideObj.bgImageId];
         if (hasOwnBg) {
@@ -730,8 +979,8 @@ function renderSlides() {
 
         dimBtn.className = `dim-btn custom-tooltip-container ${activeClass}`;
         dimBtn.innerHTML = `<i class="fa-solid ${effectIcon}"></i><span class="custom-tooltip tooltip-right">${effectTooltip}</span>`;
-        dimBtn.onclick = (e) => { 
-            e.stopPropagation(); 
+        dimBtn.onclick = (e) => {
+            e.stopPropagation();
             if (!slidesData[i].bgEffect) slidesData[i].bgEffect = 'dark';
             else if (slidesData[i].bgEffect === 'dark') slidesData[i].bgEffect = 'light';
             else slidesData[i].bgEffect = false;
@@ -788,10 +1037,10 @@ function renderSlides() {
                 if (evt.oldIndex !== evt.newIndex) {
                     const item = slidesData.splice(evt.oldIndex, 1)[0];
                     slidesData.splice(evt.newIndex, 0, item);
-                    
+
                     document.getElementById('addBlankSlide').checked = false;
                     document.getElementById('addTitleSlide').checked = false;
-                    
+
                     renderSlides();
                     syncSlidesToLyrics();
                     renderQuickCopyList();
@@ -806,26 +1055,33 @@ let touchStartX = 0;
 function openProjection(index) {
     currentProjectionIndex = index;
     renderProjectionSlide();
-    
+
     const modal = document.getElementById('projectionModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
+
     // Intentar activar Fullscreen
     if (modal.requestFullscreen) {
-        modal.requestFullscreen().catch(err => {
+        try {
+            const fsPromise = modal.requestFullscreen();
+            if (fsPromise && typeof fsPromise.catch === 'function') {
+                fsPromise.catch(err => console.log('Fullscreen no disponible:', err));
+            }
+        } catch (err) {
             console.log('Fullscreen no disponible:', err);
-        });
+        }
+    } else if (modal.webkitRequestFullscreen) {
+        try { modal.webkitRequestFullscreen(); } catch (err) { console.log('Fullscreen no disponible:', err); }
     }
 
     // Agregar listeners para swipe en móviles
     let touchStartX = 0;
     let touchEndX = 0;
-    
+
     const handleTouchStart = (e) => {
         touchStartX = e.changedTouches[0].screenX;
     };
-    
+
     const handleTouchEnd = (e) => {
         touchEndX = e.changedTouches[0].screenX;
         const swipeThreshold = 50;
@@ -835,10 +1091,10 @@ function openProjection(index) {
             prevProjectionSlide();
         }
     };
-    
+
     modal.addEventListener('touchstart', handleTouchStart, { passive: true });
     modal.addEventListener('touchend', handleTouchEnd, { passive: true });
-    
+
     // Guardar referencias para limpiar después
     modal._touchStartHandler = handleTouchStart;
     modal._touchEndHandler = handleTouchEnd;
@@ -848,15 +1104,15 @@ function closeProjection() {
     const modal = document.getElementById('projectionModal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    
+
     // Limpiar listeners
     if (modal._touchStartHandler) {
         modal.removeEventListener('touchstart', modal._touchStartHandler);
         modal.removeEventListener('touchend', modal._touchEndHandler);
     }
-    
+
     currentProjectionIndex = -1;
-    
+
     if (document.fullscreenElement) {
         document.exitFullscreen();
     }
@@ -864,7 +1120,7 @@ function closeProjection() {
 
 function renderProjectionSlide() {
     if (currentProjectionIndex < 0 || currentProjectionIndex >= slidesData.length) return;
-    
+
     const content = document.getElementById('projectionContent');
     const currentSlide = slidesData[currentProjectionIndex];
     const slideText = currentSlide ? currentSlide.text : "";
@@ -887,7 +1143,7 @@ function renderProjectionSlide() {
     content.style.backgroundSize = 'cover';
     content.style.backgroundPosition = 'center';
     content.style.backgroundRepeat = 'no-repeat';
-    
+
     // Configurar Fondo (check per-slide bgImageId first)
     let bgToUse = bgImageData;
     if (currentSlide.bgImageId && bgRegistry[currentSlide.bgImageId]) {
@@ -914,19 +1170,19 @@ function renderProjectionSlide() {
     const textDiv = document.createElement('div');
     textDiv.className = 'projection-text';
     textDiv.innerText = slideText;
-    
+
     // Aplicar estilos al texto
     textDiv.style.fontFamily = font;
     textDiv.style.color = color;
     textDiv.style.textAlign = currentAlignment;
     textDiv.style.fontWeight = isBold ? 'bold' : 'normal';
     textDiv.style.textShadow = shadow ? `3px 3px 6px ${shadowColor}` : 'none';
-    
+
     // CORRECCIÓN: Mejor cálculo del tamaño de fuente responsivo
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     let baseFontSize = size;
-    
+
     // Escalar basado en el tamaño de la pantalla (más preciso)
     if (windowWidth < 768) {
         baseFontSize = Math.max(24, size * 0.6);
@@ -935,15 +1191,15 @@ function renderProjectionSlide() {
     } else {
         baseFontSize = size;
     }
-    
+
     // Ajustar aún más basado en la altura de la pantalla
     const scaleByHeight = windowHeight / 768;
     let finalFontSize = Math.min(baseFontSize * scaleByHeight, size * 1.2);
     if (isTitle) finalFontSize *= 1.1;
     finalFontSize = Math.max(24, Math.min(isTitle ? 132 : 120, finalFontSize));
-    
+
     textDiv.style.fontSize = `${finalFontSize}px`;
-    
+
     // Configurar alineación vertical y horizontal
     textDiv.style.display = 'flex';
     textDiv.style.flexDirection = 'column';
@@ -957,13 +1213,13 @@ function renderProjectionSlide() {
     textDiv.style.whiteSpace = 'pre-wrap';
     textDiv.style.wordBreak = 'break-word';
     textDiv.style.boxSizing = 'border-box';
-    
+
     // Asegurar que el texto no se desborde
     textDiv.style.overflow = 'auto';
     textDiv.style.maxHeight = '100%';
-    
+
     content.appendChild(textDiv);
-    
+
     // Agregar indicador de página (opcional)
     const pageIndicator = document.createElement('div');
     pageIndicator.style.position = 'absolute';
@@ -1004,18 +1260,8 @@ function handleSwipe(start, end) {
     }
 }
 
-function closeProjection() {
-    const modal = document.getElementById('projectionModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    currentProjectionIndex = -1;
-    
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
-    }
-}
-
 // Escuchar teclas para navegación
+// (duplicado de closeProjection() eliminado: se conserva la versión que limpia los listeners táctiles)
 document.addEventListener('keydown', (e) => {
     // Si la proyección está activa
     if (currentProjectionIndex !== -1) {
@@ -1084,7 +1330,7 @@ function syncSlidesToLyrics() {
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
         if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
-        
+
         let slideText = s.text.trim();
         if (slideText === "") {
             prefix += "[VACIO]";
@@ -1093,7 +1339,7 @@ function syncSlidesToLyrics() {
         return prefix + s.text;
     });
     document.getElementById('lyricsInput').value = textArray.join('\n\n');
-    
+
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
 }
@@ -1101,22 +1347,22 @@ function syncSlidesToLyrics() {
 // Sincroniza fondo global usando etiquetas FONDOGENERAL
 function syncGlobalBackground(bgId) {
     console.log("syncGlobalBackground called with bgId:", bgId);
-    
+
     // Usar syncSlidesToLyrics que ya tiene la lógica correcta para estructurar los slides
     // Primero, actualizar slidesData para que todos los slides tengan el bgImageId del fondo global
     slidesData.forEach(slide => {
         slide.bgImageId = bgId;
     });
-    
+
     // Luego sincronizar con el textarea
     syncSlidesToLyrics();
-    
+
     // Reemplazar todas las etiquetas [FONDO:ID] por [FONDOGENERAL:ID]
     const rawText = document.getElementById('lyricsInput').value;
     const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const newText = text.replace(/\[FONDO:([^\]]+)\]/gi, `[FONDOGENERAL:${bgId}]`);
     document.getElementById('lyricsInput').value = newText;
-    
+
     console.log("syncGlobalBackground completed, textarea updated");
 }
 
@@ -1124,17 +1370,17 @@ function syncGlobalBackground(bgId) {
 function syncSingleSlideBgChange(slideIndex) {
     const slide = slidesData[slideIndex];
     if (!slide) return;
-    
+
     // Actualizar solo el tag FONDO en el textarea para este slide específico
     const rawText = document.getElementById('lyricsInput').value;
     const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = text.split('\n');
-    
+
     // Encontrar el slide correspondiente en el texto
     let currentSlideIndex = 0;
     let newText = [];
     let i = 0;
-    
+
     while (i < lines.length && currentSlideIndex <= slideIndex) {
         let line = lines[i];
         let isTitle = false;
@@ -1142,7 +1388,7 @@ function syncSingleSlideBgChange(slideIndex) {
         let bgImageId = null;
         let isBlank = false;
         let hadFondoGeneral = false;
-        
+
         // Procesar tags
         while (true) {
             if (line.toUpperCase().startsWith('[TITULO]')) {
@@ -1183,12 +1429,12 @@ function syncSingleSlideBgChange(slideIndex) {
             }
             break;
         }
-        
+
         if (line === "" && !isBlank) {
             i++;
             continue;
         }
-        
+
         if (currentSlideIndex === slideIndex) {
             // Este es el slide que queremos modificar
             let prefix = "";
@@ -1198,7 +1444,7 @@ function syncSingleSlideBgChange(slideIndex) {
             // Usar FONDO: para fondos individuales, rompe FONDOGENERAL
             if (slide.bgImageId) prefix += `[FONDO:${slide.bgImageId}]\n`;
             if (isBlank) prefix += "[VACIO]";
-            
+
             newText.push(prefix + line);
         } else {
             // Mantener el slide original
@@ -1212,14 +1458,14 @@ function syncSingleSlideBgChange(slideIndex) {
                 originalPrefix += `[FONDOGENERAL:${globalBgImageId}]\n`;
             }
             if (isBlank) originalPrefix += "[VACIO]";
-            
+
             newText.push(originalPrefix + line);
         }
-        
+
         currentSlideIndex++;
         i++;
     }
-    
+
     document.getElementById('lyricsInput').value = newText.join('\n\n');
 }
 
@@ -1231,7 +1477,7 @@ function updateStyles() {
 
     const realSize = parseInt(document.getElementById('fontSize').value);
     const previewSize = Math.max(10, realSize * 0.25);
-    
+
     // Mapeo para Flexbox (con flex-direction: column)
     const vAlignMap = { 'top': 'flex-start', 'center': 'center', 'bottom': 'flex-end' };
     const hAlignMap = { 'left': 'flex-start', 'center': 'center', 'right': 'flex-end' };
@@ -1297,7 +1543,7 @@ function updateStyles() {
             content.style.justifyContent = vAlignMap[currentVerticalAlignment];
             // Alineación Horizontal con align-items (en column)
             content.style.alignItems = hAlignMap[currentAlignment];
-            
+
             content.style.fontSize = `${previewSize}px`;
             content.style.fontWeight = isBold ? 'bold' : 'normal';
             content.style.textShadow = shadow ? '2px 2px 4px rgba(0,0,0,0.8)' : 'none';
@@ -1333,26 +1579,26 @@ function openGallery(mode) {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
     console.log("Cargando galería con " + galleryImages.length + " imágenes...");
-    
+
     galleryImages.forEach(url => {
         const item = document.createElement('div');
         item.className = 'gallery-item bg-slate-700 animate-pulse';
         item.onclick = () => selectGalleryImage(url);
 
         const img = document.createElement('img');
-        
+
         img.onload = () => {
             item.classList.remove('animate-pulse');
             item.style.backgroundColor = 'transparent';
         };
-        
+
         img.onerror = () => {
             console.warn("No se pudo cargar: " + url);
             // En lugar de borrarlo, podemos mostrar un placeholder o simplemente ocultarlo
             item.classList.remove('animate-pulse');
             item.innerHTML = '<div class="text-[8px] text-slate-500 flex items-center justify-center h-full">Error</div>';
         };
-        
+
         img.src = url;
         img.loading = 'lazy';
         img.className = 'w-full h-full object-cover rounded-lg';
@@ -1360,7 +1606,7 @@ function openGallery(mode) {
         item.appendChild(img);
         grid.appendChild(item);
     });
-    
+
     document.getElementById('galleryModal').classList.remove('hidden');
     document.getElementById('galleryModal').classList.add('flex');
 }
@@ -1387,55 +1633,94 @@ async function selectGalleryImage(url) {
     document.getElementById('globalLoader').classList.remove('hidden');
     document.getElementById('globalLoader').classList.add('flex');
 
-    try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const dataUrl = reader.result;
-            if (galleryMode === 'individual' && window.targetBgSlideIndex !== undefined) {
-                // Assign to specific slide
-                const bgId = `gallery_${nextBgId++}`;
-                bgRegistry[bgId] = dataUrl;
-                slidesData[window.targetBgSlideIndex].bgImageId = bgId;
-                // Sync all slides to maintain consistency
-                syncSlidesToLyrics();
-                renderSlides();
-                // Reset target index after use
-                window.targetBgSlideIndex = undefined;
-            } else if (galleryMode === 'multi' && selectedSlides.size > 0) {
-                // Assign to all selected slides
-                const bgId = `gallery_${nextBgId++}`;
-                bgRegistry[bgId] = dataUrl;
-                for (let idx of selectedSlides) {
-                    if (idx >= 0 && idx < slidesData.length) {
-                        slidesData[idx].bgImageId = bgId;
-                    }
+    // Fix file:// CORS: no usar fetch, convertir via Image+Canvas con fallback a url directa
+    function imageToDataUrlFallback(imageUrl){
+        return new Promise((resolve)=>{
+            const img = new Image();
+            img.onload = () => {
+                try{
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    // JPEG 0.85 para tamaño menor
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    resolve(dataUrl);
+                }catch(e){
+                    console.warn('[Galeria] canvas toDataURL falló (file:// tainted), usando url directa', e);
+                    resolve(imageUrl);
                 }
-                syncSlidesToLyrics();
-                renderSlides();
-            } else {
-                // Default: global background - use FONDOGENERAL tag
-                console.log("Applying global background, galleryMode:", galleryMode);
-                const bgId = `global_${nextBgId++}`;
-                bgRegistry[bgId] = dataUrl;
-                globalBgImageId = bgId;
-                console.log("bgId:", bgId, "globalBgImageId:", globalBgImageId);
-                // Add FONDOGENERAL tag to all slides
-                syncGlobalBackground(bgId);
-                renderSlides();
+            };
+            img.onerror = (e) => {
+                console.warn('[Galeria] img.onerror, usando url directa', imageUrl, e);
+                resolve(imageUrl);
+            };
+            // Importante: no poner crossOrigin para file://, deja que cargue local
+            img.src = imageUrl;
+            // Si ya está en cache y complete, disparar manual
+            if(img.complete && img.naturalWidth){
+                // pequeño delay para asegurar onload
+                setTimeout(()=> img.onload(), 10);
             }
-            document.getElementById('globalLoader').classList.add('hidden');
-            document.getElementById('globalLoader').classList.remove('flex');
-            closeGallery();
-        };
-        reader.readAsDataURL(blob);
-    } catch (error) {
-        console.error(error);
-        alert("Error al cargar imagen. Intenta con otra.");
+        });
+    }
+
+    try {
+        const dataUrl = await imageToDataUrlFallback(url);
+
+        if (galleryMode === 'individual' && window.targetBgSlideIndex !== undefined) {
+            const bgId = `gallery_${nextBgId++}`;
+            bgRegistry[bgId] = dataUrl;
+            slidesData[window.targetBgSlideIndex].bgImageId = bgId;
+            syncSlidesToLyrics();
+            renderSlides();
+            window.targetBgSlideIndex = undefined;
+        } else if (galleryMode === 'multi' && selectedSlides.size > 0) {
+            const bgId = `gallery_${nextBgId++}`;
+            bgRegistry[bgId] = dataUrl;
+            for (let idx of selectedSlides) {
+                if (idx >= 0 && idx < slidesData.length) {
+                    slidesData[idx].bgImageId = bgId;
+                }
+            }
+            syncSlidesToLyrics();
+            renderSlides();
+        } else {
+            console.log("Applying global background, galleryMode:", galleryMode);
+            const bgId = `global_${nextBgId++}`;
+            bgRegistry[bgId] = dataUrl;
+            globalBgImageId = bgId;
+            console.log("bgId:", bgId, "globalBgImageId:", globalBgImageId);
+            syncGlobalBackground(bgId);
+            renderSlides();
+        }
         document.getElementById('globalLoader').classList.add('hidden');
         document.getElementById('globalLoader').classList.remove('flex');
         closeGallery();
+    } catch (error) {
+        console.error(error);
+        // Ultimo fallback: usar url directa sin convertir
+        try{
+            const bgId = `global_${nextBgId++}`;
+            bgRegistry[bgId] = url;
+            if (galleryMode === 'individual' && window.targetBgSlideIndex !== undefined) {
+                slidesData[window.targetBgSlideIndex].bgImageId = bgId;
+                window.targetBgSlideIndex = undefined;
+            } else if (galleryMode === 'multi' && selectedSlides.size > 0) {
+                for (let idx of selectedSlides) slidesData[idx].bgImageId = bgId;
+            } else {
+                globalBgImageId = bgId;
+                syncGlobalBackground(bgId);
+            }
+            syncSlidesToLyrics();
+            renderSlides();
+            closeGallery();
+        }catch(e2){
+            alert("Error al cargar imagen. Intenta con otra. Si estás en file://, usa 'Galería -> Subir desde PC' o arrastra la imagen.");
+        }
+        document.getElementById('globalLoader').classList.add('hidden');
+        document.getElementById('globalLoader').classList.remove('flex');
     }
 }
 
@@ -1455,11 +1740,11 @@ function closeEditModal() {
 function saveEditSlide() {
     if (currentEditingIndex > -1) {
         slidesData[currentEditingIndex].text = document.getElementById('editSlideText').value;
-        // Al editar manualmente, desactivamos las opciones automáticas 
+        // Al editar manualmente, desactivamos las opciones automáticas
         // para que el textarea refleje exactamente el cambio y no se dupliquen al procesar
         document.getElementById('addBlankSlide').checked = false;
         document.getElementById('addTitleSlide').checked = false;
-        
+
         syncSlidesToLyrics();
         renderSlides();
         renderQuickCopyList();
@@ -1525,7 +1810,7 @@ function addToRepertoire() {
     // TOMAR EL NOMBRE DE LA CANCIÓN DEL CAMPO "songName", NO del exportFileName
     let songName = document.getElementById('songName').value.trim();
     let author = document.getElementById('songAuthor').value.trim();
-    
+
     // Formatear el nombre correctamente
     if (songName) {
         songName = toTitleCase(songName);
@@ -1543,7 +1828,7 @@ function addToRepertoire() {
             songBgRegistry[s.bgImageId] = bgRegistry[s.bgImageId];
         }
     }
-    
+
     // También incluir fondos de inserciones si existen (IDs que empiezan con 'insertion_')
     let insertionBgCount = 0;
     for (let bgId in bgRegistry) {
@@ -1575,6 +1860,7 @@ function addToRepertoire() {
 
     repertoireList.push(songConfig);
     renderRepertoireList();
+    try{ saveSessionToLocalStorage(); }catch(e){}
 
     const btn = document.querySelector('button[onclick="addToRepertoire()"]');
     const originalHTML = btn.innerHTML;
@@ -1623,15 +1909,18 @@ function renderRepertoireList() {
                     <p class="text-[10px] text-slate-500 dark:text-slate-400">${totalSlides} diapositivas${insertionCount > 0 ? ` (+${insertionCount} inserción${insertionCount > 1 ? 'es' : ''})` : ''}</p>
                 </div>
             </div>
-            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onclick="openInsertionModal(${index})" class="text-slate-400 hover:text-purple-400 p-1" title="Insertar canción">
-                    <i class="fa-solid fa-code-merge"></i>
+            <div class="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <button onclick="renameRepertoireItem(${index})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white transition" title="Cambiar nombre">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
                 </button>
-                <button onclick="loadFromRepertoire(${index})" class="text-slate-400 hover:text-blue-400 p-1" title="Cargar en el Editor">
-                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                <button onclick="openInsertionModal(${index})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-purple-500 hover:text-white transition" title="Insertar canción">
+                    <i class="fa-solid fa-code-merge text-[10px]"></i>
                 </button>
-                <button onclick="removeRepertoireItem(${index})" class="text-slate-400 hover:text-red-400 p-1" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
+                <button onclick="loadFromRepertoire(${index})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white transition" title="Cargar en el Editor">
+                    <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
+                </button>
+                <button onclick="removeRepertoireItem(${index})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-500 hover:text-white transition" title="Eliminar">
+                    <i class="fa-solid fa-trash text-[10px]"></i>
                 </button>
             </div>
         `;
@@ -1691,14 +1980,14 @@ function loadFromRepertoire(index) {
         if (typeof s === 'string') return { text: s, isTitle: false };
         return { ...s };
     });
-    
+
     const textArray = slidesToLoad.map(s => {
         let prefix = "";
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
         if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
-        
+
         let slideText = s.text.trim();
         if (slideText === "") {
             prefix += "[VACIO]";
@@ -1716,7 +2005,7 @@ function loadFromRepertoire(index) {
     updateStyles();
     generateTag();
     processLyrics();
-    
+
     // Hacer scroll al editor
     scrollToSection('diapositivas');
 }
@@ -1734,7 +2023,34 @@ function escapeHtml(str) {
 function removeRepertoireItem(index) {
     repertoireList.splice(index, 1);
     renderRepertoireList();
+    try{ saveSessionToLocalStorage(); }catch(e){}
 }
+
+
+function renameRepertoireItem(index){
+    const song = repertoireList[index];
+    if(!song) return;
+    const currentName = song.name || '';
+    const newName = prompt('✏️ Cambiar nombre de la canción:', currentName);
+    if(newName === null) return; // cancelado
+    const trimmed = newName.trim();
+    if(!trimmed){
+        alert('El nombre no puede estar vacío');
+        return;
+    }
+    if(trimmed === currentName) return;
+    song.name = trimmed;
+    renderRepertoireList();
+    try{ saveSessionToLocalStorage(); }catch(e){}
+    try{
+        const preview = document.getElementById('repertorioPreview');
+        if(preview) {
+            // actualizar preview si visible
+        }
+    }catch(e){}
+    console.log('[Repertorio] Renombrado:', currentName, '->', trimmed);
+}
+
 
 // --- INSERCIÓN DE CANCIONES EN REPERTORIO ---
 let currentInsertionSongIndex = null;
@@ -1745,34 +2061,34 @@ function processSongInsertions(song) {
     if (!song.insertions || song.insertions.length === 0) {
         return song.slides;
     }
-    
+
     let processedSlides = [];
     let insertionIndex = 0;
-    
+
     for (let i = 0; i < song.slides.length; i++) {
         processedSlides.push(song.slides[i]);
-        
+
         // Verificar si hay inserciones después de este slide
-        while (insertionIndex < song.insertions.length && 
+        while (insertionIndex < song.insertions.length &&
                song.insertions[insertionIndex].afterSlide === i) {
             const insertion = song.insertions[insertionIndex];
-            
+
             // Restaurar fondos de esta inserción al bgRegistry global
             if (insertion.bgRegistry) {
                 Object.assign(bgRegistry, insertion.bgRegistry);
             }
-            
+
             // Agregar todas las diapositivas copiadas de la inserción
             if (insertion.slides && insertion.slides.length > 0) {
                 insertion.slides.forEach(slide => {
                     processedSlides.push(slide);
                 });
             }
-            
+
             insertionIndex++;
         }
     }
-    
+
     return processedSlides;
 }
 
@@ -1781,14 +2097,14 @@ function mergeInsertionBgRegistries(song) {
     if (!song.insertions || song.insertions.length === 0) {
         return;
     }
-    
+
     // Para cada inserción, necesitamos asegurar que los fondos existan en bgRegistry
     // Las inserciones copian slides con bgImageId, pero esos IDs podrían no existir
     // en el bgRegistry de la canción principal
     // Como las inserciones son copias independientes, generamos nuevos IDs únicos
     let idMap = {};
     let nextId = nextBgId;
-    
+
     song.insertions.forEach(insertion => {
         insertion.slides.forEach(slide => {
             if (slide.bgImageId) {
@@ -1799,7 +2115,7 @@ function mergeInsertionBgRegistries(song) {
                     // Generar nuevo ID único para esta canción
                     const newId = `insertion_${nextId++}`;
                     idMap[slide.bgImageId] = newId;
-                    
+
                     // Copiar los datos del fondo si existen en algún lugar
                     // Nota: Como las inserciones son copias independientes, no tenemos acceso
                     // al bgRegistry original. Los fondos deberían haberse copiado como parte
@@ -1810,7 +2126,7 @@ function mergeInsertionBgRegistries(song) {
             }
         });
     });
-    
+
     nextBgId = nextId;
 }
 
@@ -1820,7 +2136,7 @@ function openInsertionModal(songIndex) {
     const modal = document.getElementById('insertionModal');
     const slideSelect = document.getElementById('insertionSlideSelect');
     const songSelect = document.getElementById('insertionSongSelect');
-    
+
     // Llenar select de diapositivas
     slideSelect.innerHTML = '';
     for (let i = 0; i < song.slides.length; i++) {
@@ -1829,7 +2145,7 @@ function openInsertionModal(songIndex) {
         option.textContent = `Diapositiva ${i + 1}`;
         slideSelect.appendChild(option);
     }
-    
+
     // Llenar select de canciones (excluyendo la actual)
     songSelect.innerHTML = '';
     repertoireList.forEach((item, index) => {
@@ -1840,7 +2156,7 @@ function openInsertionModal(songIndex) {
             songSelect.appendChild(option);
         }
     });
-    
+
     // Mostrar inserciones actuales si existen
     if (song.insertions && song.insertions.length > 0) {
         document.getElementById('currentInsertions').classList.remove('hidden');
@@ -1848,12 +2164,12 @@ function openInsertionModal(songIndex) {
     } else {
         document.getElementById('currentInsertions').classList.add('hidden');
     }
-    
+
     // Habilitar/deshabilitar botón de deshacer según historial
     const undoBtn = document.getElementById('undoInsertionBtn');
     const hasHistory = insertionHistory.some(h => h.songIndex === songIndex);
     undoBtn.disabled = !hasHistory;
-    
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
@@ -1867,65 +2183,65 @@ function closeInsertionModal() {
 
 function undoInsertion() {
     if (currentInsertionSongIndex === null || insertionHistory.length === 0) return;
-    
+
     // Buscar el último estado guardado para esta canción
     const lastHistoryIndex = insertionHistory.map((h, i) => ({ ...h, originalIndex: i }))
         .filter(h => h.songIndex === currentInsertionSongIndex)
         .pop();
-    
+
     if (!lastHistoryIndex) return;
-    
+
     const song = repertoireList[currentInsertionSongIndex];
-    
+
     // Restaurar estado anterior
     if (lastHistoryIndex.previousInsertions.length === 0) {
         song.insertions = [];
     } else {
         song.insertions = JSON.parse(JSON.stringify(lastHistoryIndex.previousInsertions));
     }
-    
+
     // Eliminar del historial
     insertionHistory.splice(lastHistoryIndex.originalIndex, 1);
-    
+
     // Actualizar UI
     renderRepertoireList();
     renderInsertionsList(song);
-    
+
     // Deshabilitar botón de deshacer si no hay más historial
     const hasHistory = insertionHistory.some(h => h.songIndex === currentInsertionSongIndex);
     document.getElementById('undoInsertionBtn').disabled = !hasHistory;
-    
+
     // Cargar en el editor para mostrar el resultado
     loadFromRepertoire(currentInsertionSongIndex);
 }
 
 function addInsertion() {
     if (currentInsertionSongIndex === null) return;
-    
+
     const slideIndex = parseInt(document.getElementById('insertionSlideSelect').value);
     const songIndex = parseInt(document.getElementById('insertionSongSelect').value);
-    
+
     if (isNaN(slideIndex) || isNaN(songIndex)) {
         alert('Selecciona una diapositiva y una canción');
         return;
     }
-    
+
     const song = repertoireList[currentInsertionSongIndex];
     const insertedSong = repertoireList[songIndex];
-    
+
     // Guardar estado anterior en historial
     insertionHistory.push({
         songIndex: currentInsertionSongIndex,
         previousInsertions: song.insertions ? JSON.parse(JSON.stringify(song.insertions)) : []
     });
-    
+
     if (!song.insertions) song.insertions = [];
-    
+
     // Copiar las diapositivas de la canción a insertar (copia independiente)
     // También copiar los fondos por diapositiva si existen
     // IMPORTANTE: Convertir FONDOGENERAL a FONDO individual para evitar conflictos
     // cuando se mezclan canciones con diferentes fondos globales
-    
+
     // Primero, detectar si hay un fondo global (todos los slides tienen el mismo bgImageId)
     let globalBgId = null;
     if (insertedSong.slides.length > 0) {
@@ -1940,14 +2256,14 @@ function addInsertion() {
             }
         }
     }
-    
+
     // Crear un bgRegistry local para esta inserción
     let insertionBgRegistry = {};
-    
+
     const copiedSlides = insertedSong.slides.map(slide => {
         if (typeof slide === 'string') return { text: slide, isTitle: false };
         const slideCopy = { ...slide };
-        
+
         // Si el slide tiene un fondo individual, copiar los datos del fondo
         if (slide.bgImageId && insertedSong.bgRegistrySnapshot && insertedSong.bgRegistrySnapshot[slide.bgImageId]) {
             // Si es parte de un fondo global, crear un ID único para este slide específico
@@ -1967,7 +2283,7 @@ function addInsertion() {
         }
         return slideCopy;
     });
-    
+
     // Verificar si ya existe una inserción en la misma posición
     const existingIndex = song.insertions.findIndex(ins => ins.afterSlide === slideIndex);
     if (existingIndex !== -1) {
@@ -1977,19 +2293,19 @@ function addInsertion() {
     } else {
         song.insertions.push({ afterSlide: slideIndex, slides: copiedSlides, songName: insertedSong.name, bgRegistry: insertionBgRegistry });
     }
-    
+
     // Ordenar inserciones por posición
     song.insertions.sort((a, b) => a.afterSlide - b.afterSlide);
-    
+
     renderRepertoireList();
     renderInsertionsList(song);
-    
+
     // Habilitar botón de deshacer
     document.getElementById('undoInsertionBtn').disabled = false;
-    
+
     // Cargar en el editor para mostrar el resultado inmediatamente
     loadFromRepertoire(currentInsertionSongIndex);
-    
+
     // Cerrar el modal
     closeInsertionModal();
 }
@@ -1997,12 +2313,12 @@ function addInsertion() {
 function renderInsertionsList(song) {
     const list = document.getElementById('insertionsList');
     list.innerHTML = '';
-    
+
     if (!song.insertions || song.insertions.length === 0) {
         list.innerHTML = '<p class="text-slate-500 italic">Sin inserciones</p>';
         return;
     }
-    
+
     song.insertions.forEach((ins, idx) => {
         const div = document.createElement('div');
         div.className = 'flex justify-between items-center bg-slate-700 rounded p-2';
@@ -2018,14 +2334,14 @@ function renderInsertionsList(song) {
 
 function removeInsertion(insertionIndex) {
     if (currentInsertionSongIndex === null) return;
-    
+
     const song = repertoireList[currentInsertionSongIndex];
     song.insertions.splice(insertionIndex, 1);
-    
+
     if (song.insertions.length === 0) {
         document.getElementById('currentInsertions').classList.add('hidden');
     }
-    
+
     renderRepertoireList();
     renderInsertionsList(song);
 }
@@ -2049,7 +2365,7 @@ function sendAllRepertoireToEditor() {
     if (slidesData.length > 0) {
         if (!confirm("Esto reemplazará la canción actual en el editor por todo el repertorio. ¿Continuar?")) return;
     }
-    
+
     // Merge bgRegistry from all songs - clear first to avoid mixing
     bgRegistry = {};
     let mergedBgRegistry = {};
@@ -2070,14 +2386,14 @@ function sendAllRepertoireToEditor() {
         });
         allSlides = allSlides.concat(slidesToLoad);
     });
-    
+
     const textArray = allSlides.map(s => {
         let prefix = "";
         if (s.isTitle) prefix += "[TITULO]\n";
         if (s.bgEffect === 'dark') prefix += "[FONDO_OSCURO]\n";
         if (s.bgEffect === 'light') prefix += "[FONDO_CLARO]\n";
         if (s.bgImageId) prefix += `[FONDO:${s.bgImageId}]\n`;
-        
+
         let slideText = s.text.trim();
         if (slideText === "") {
             prefix += "[VACIO]";
@@ -2086,23 +2402,24 @@ function sendAllRepertoireToEditor() {
         return prefix + s.text;
     });
     document.getElementById('lyricsInput').value = textArray.join('\n\n');
-    
+
     document.getElementById('addBlankSlide').checked = false;
     document.getElementById('addTitleSlide').checked = false;
-    
+
     // Clear song name and author since it's a mix
     document.getElementById('songName').value = "Repertorio Completo";
     document.getElementById('songAuthor').value = "";
-    
+
     updateStyles();
     generateTag();
     processLyrics();
-    
+
     scrollToSection('diapositivas');
 }
 
 async function downloadSetlist() {
     if (repertoireList.length === 0) return alert("El repertorio está vacío.");
+    if (typeof PptxGenJS === 'undefined') return alert("No se pudo cargar la librería PowerPoint (PptxGenJS).\n\nRevisa tu conexión, desactiva el bloqueador de anuncios y recarga la página.");
 
     const btn = document.querySelector('button[onclick="downloadSetlist()"]');
     const originalText = btn.innerHTML;
@@ -2123,16 +2440,18 @@ async function downloadSetlist() {
 
             // DEFINIR MASTER PARA ESTA CANCIÓN (Evita duplicar imágenes y corrupción)
             let masterObj = { title: masterName, objects: [] };
-            if (st.bgImage) {
-                masterObj.objects.push({ 
-                    image: { x: 0, y: 0, w: 10, h: 5.625, data: st.bgImage, sizing: { type: 'cover' } } 
+            const bgValid = st.bgImage && typeof st.bgImage === 'string' && st.bgImage.startsWith('data:') && st.bgImage.includes('base64,');
+            if (bgValid) {
+                masterObj.objects.push({
+                    image: { x: 0, y: 0, w: 10, h: 5.625, data: st.bgImage, sizing: { type: 'cover' } }
                 });
                 if (st.bgTransparency) {
-                    masterObj.objects.push({ 
-                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+                    masterObj.objects.push({
+                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } }
                     });
                 }
             } else {
+                if(st.bgImage) console.warn('[PPTX Repertorio] Imagen no base64, usando blanco:', st.bgImage);
                 masterObj.background = { color: 'FFFFFF' };
             }
             pptx.defineSlideMaster(masterObj);
@@ -2147,13 +2466,13 @@ async function downloadSetlist() {
 
             // RECORRER LAS DIAPOSITIVAS DE LA CANCIÓN CON INSERCIONES
             let processedSlides = processSongInsertions(song);
-            
+
             // Generar diapositivas del PPTX
             for (let slideObj of processedSlides) {
                 let text = (typeof slideObj === 'string' ? slideObj : slideObj.text).trim() || " ";
                 const isTitle = typeof slideObj === 'string' ? false : slideObj.isTitle;
                 let slideFontSize = isTitle ? Math.min(st.size * 1.1, 132) : st.size;
-                
+
                 let slide = pptx.addSlide({ masterName: masterName });
 
                 slide.addText(text, {
@@ -2201,6 +2520,7 @@ function getBase64Data(data) {
 // --- PPTX ---
 async function downloadPPTX() {
     if (slidesData.length === 0) return alert("No hay diapositivas para exportar.");
+    if (typeof PptxGenJS === 'undefined') return alert("No se pudo cargar la librería PowerPoint (PptxGenJS).\n\nRevisa tu conexión, desactiva el bloqueador de anuncios y recarga la página.");
 
     const btn = document.querySelector('button[onclick="downloadPPTX()"]');
     const originalText = btn.innerHTML;
@@ -2214,20 +2534,43 @@ async function downloadPPTX() {
 
         // DEFINIR MASTER PARA ESTA PRESENTACIÓN (Soluciona corrupción y fallas en 2da slide)
         let mastersCreated = {};
-        
+
         function defineMaster(bgId, dataUrl) {
             const mName = bgId ? `MASTER_${bgId}` : "GLOBAL_BG_MASTER";
             if (mastersCreated[mName]) return mName;
-            
+
             let mObj = { title: mName, objects: [] };
-            if (dataUrl) {
-                mObj.objects.push({ 
-                    image: { x: 0, y: 0, w: 10, h: 5.625, data: dataUrl, sizing: { type: 'cover' } } 
+            // FIX: Validar que dataUrl sea base64 con header, si no, ignorar imagen para evitar ERROR pptxgen
+            const isValidBase64 = dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:') && dataUrl.includes('base64,');
+            const isRelativeUrl = dataUrl && typeof dataUrl === 'string' && !dataUrl.startsWith('data:') && (dataUrl.startsWith('imagenes/') || dataUrl.startsWith('http') || dataUrl.includes('.jpg') || dataUrl.includes('.png') || dataUrl.includes('.gif'));
+            
+            if (isValidBase64) {
+                mObj.objects.push({
+                    image: { x: 0, y: 0, w: 10, h: 5.625, data: dataUrl, sizing: { type: 'cover' } }
                 });
                 if (document.getElementById('bgTransparency').checked) {
-                    mObj.objects.push({ 
-                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } } 
+                    mObj.objects.push({
+                        rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } }
                     });
+                }
+            } else if (isRelativeUrl) {
+                // En file://, la galería puede guardar url relativa que no sirve para PPTX, usar fondo blanco y advertir
+                console.warn('[PPTX] Imagen no es base64 (es url relativa:', dataUrl, ') - usando fondo blanco. Usa "Subir desde PC" o drag&drop para fondos compatibles con PPTX.');
+                mObj.background = { color: 'FFFFFF' };
+            } else if (dataUrl) {
+                // Si no es base64 válida ni relativa conocida, intentar igual pero capturar error
+                try {
+                    mObj.objects.push({
+                        image: { x: 0, y: 0, w: 10, h: 5.625, data: dataUrl, sizing: { type: 'cover' } }
+                    });
+                    if (document.getElementById('bgTransparency').checked) {
+                        mObj.objects.push({
+                            rect: { x: 0, y: 0, w: 10, h: 5.625, fill: { color: 'FFFFFF', transparency: 20 } }
+                        });
+                    }
+                } catch(e){
+                    console.warn('[PPTX] Error con imagen, usando fondo blanco', e);
+                    mObj.background = { color: 'FFFFFF' };
                 }
             } else {
                 mObj.background = { color: 'FFFFFF' };
@@ -2301,6 +2644,7 @@ async function downloadPPTX() {
 // --- EXPORTACIÓN PDF ---
 async function exportToPDF() {
     if (!slidesData.length) return alert("Sin contenido.");
+    if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') return alert("No se pudieron cargar las librerías de PDF.\n\nRevisa tu conexión, desactiva el bloqueador de anuncios y recarga la página.");
     const btn = document.getElementById('btnExportPDF');
     btn.disabled = true;
     document.getElementById('loadingIndicator').classList.remove('hidden');
@@ -2334,7 +2678,7 @@ async function exportToPDF() {
             slide.style.justifyContent = 'center'; slide.style.alignItems = vAlignMap[currentVerticalAlignment];
             if (shadow) slide.style.textShadow = `5px 5px 8px ${shadowColor}`;
             const transparency = document.getElementById('bgTransparency').checked;
-            
+
             let bgDataToUse = bgImageData;
             if (slideObj.bgImageId && bgRegistry[slideObj.bgImageId]) {
                 bgDataToUse = bgRegistry[slideObj.bgImageId];
@@ -2378,7 +2722,7 @@ function importSongFromFile() {
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
         reader.onload = (event) => {
             const content = event.target.result;
@@ -2392,13 +2736,13 @@ function importSongFromFile() {
 // 1. PRIMERO: Función auxiliar de limpieza
 function cleanLyricsText(text) {
     if (!text) return text;
-    
+
     // Eliminar líneas que parecen metadatos YAML
     const lines = text.split('\n');
     const cleanedLines = lines.filter(line => {
         const lowerLine = line.trim().toLowerCase();
         // Filtrar líneas que parecen configuraciones YAML
-        const isYamlLine = 
+        const isYamlLine =
             lowerLine.startsWith('title:') ||
             lowerLine.startsWith('author:') ||
             lowerLine.startsWith('background:') ||
@@ -2414,10 +2758,10 @@ function cleanLyricsText(text) {
             lowerLine.startsWith('verticalalignment') ||
             lowerLine.startsWith('bgtransparency') ||
             lowerLine === '---';
-        
+
         return !isYamlLine;
     });
-    
+
     return cleanedLines.join('\n');
 }
 
@@ -2433,7 +2777,7 @@ function parseImportedSong(content) {
     // Normalización inicial de saltos de línea
     const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = normalizedContent.split('\n');
-    
+
     let title = "";
     let author = "";
     let background = "";
@@ -2441,11 +2785,11 @@ function parseImportedSong(content) {
     let inYaml = false;
     let yamlTitle = "";
     let yamlAuthor = "";
-    
+
     // PRIMERA PASADA: Extraer metadatos YAML y configuración
     for (let i = 0; i < lines.length; i++) {
         let line = lines[i].trim();
-        
+
         // Detectar inicio/fin de YAML front matter
         if (line === "---") {
             if (i === 0 && !inYaml) {
@@ -2456,16 +2800,16 @@ function parseImportedSong(content) {
                 continue;
             }
         }
-        
+
         // Extraer metadatos YAML y configuración
         if (inYaml) {
             // Metadatos básicos
             if (line.toLowerCase().startsWith('title:')) {
                 yamlTitle = line.substring(6).trim();
-            } 
+            }
             else if (line.toLowerCase().startsWith('author:')) {
                 yamlAuthor = line.substring(7).trim();
-            } 
+            }
             else if (line.toLowerCase().startsWith('background:')) {
                 // MODIFICADO: Regex para capturar Base64 entre comillas o directamente
                 const bgMatch = line.match(/background:\s*["']?(.*?)["']?$/i);
@@ -2540,18 +2884,18 @@ function parseImportedSong(content) {
             continue;
         }
     }
-    
+
     // SEGUNDA PASADA: Extraer título, autor y letra del cuerpo (si no estaban en YAML)
     let foundTitle = false;
     let foundAuthor = false;
-    
+
     for (let i = 0; i < lines.length; i++) {
         let rawLine = lines[i];
         let line = rawLine.trim();
-        
+
         // Saltar líneas vacías al principio
         if (line === "" && !foundTitle && !foundAuthor && lyrics.length === 0) continue;
-        
+
         // Detectar título Markdown (# Título)
         const titleMatch = line.match(/^#+\s+(.+)$/);
         if (titleMatch && !foundTitle && !yamlTitle) {
@@ -2559,33 +2903,33 @@ function parseImportedSong(content) {
             foundTitle = true;
             continue;
         }
-        
+
         // Detectar autor (varios formatos)
         const authorMatch1 = line.match(/^\*\*Autor:\*\*\s*(.+)$/i);
         const authorMatch2 = line.match(/^Autor:\s*(.+)$/i);
         const authorMatch3 = line.match(/^@\s*(.+)$/i);
-        
+
         if ((authorMatch1 || authorMatch2 || authorMatch3) && !foundAuthor && !yamlAuthor) {
             const match = authorMatch1 || authorMatch2 || authorMatch3;
             author = match[1].trim();
             foundAuthor = true;
             continue;
         }
-        
+
         // Si ya pasamos los metadatos, todo lo demás es letra
         if (foundTitle || foundAuthor || !line.match(/^#|^\*\*Autor|^Autor:|^@/)) {
             lyrics.push(rawLine);
         }
     }
-    
+
     // Priorizar metadatos YAML sobre los del cuerpo
     if (yamlTitle) title = yamlTitle;
     if (yamlAuthor) author = yamlAuthor;
-    
+
     // Limpiar título de posibles caracteres no deseados
     title = title.replace(/[#*_]/g, '').trim();
     author = author.replace(/[#*_]/g, '').trim();
-    
+
     // Si el título parece una etiqueta (#Algo), extraer solo el nombre
     if (title.startsWith('#')) {
         const tagMatch = title.match(/^#([^(]+)/);
@@ -2593,10 +2937,10 @@ function parseImportedSong(content) {
             title = tagMatch[1].trim();
         }
     }
-    
+
     // Si no hay título, usar un valor por defecto
     if (!title) title = "Canción sin título";
-    
+
     // Limpiar la letra: eliminar líneas que sean solo metadatos repetidos
     const cleanLyrics = lyrics.filter(line => {
         const trimmed = line.trim();
@@ -2608,21 +2952,21 @@ function parseImportedSong(content) {
         if (trimmed === `@${author}`) return false;
         return true;
     });
-    
+
     // ASIGNAR VALORES AL EDITOR
     document.getElementById('songName').value = title;
     document.getElementById('songAuthor').value = author || "";
-    
+
     // Unir la letra con saltos de línea
     let lyricsText = cleanLyrics.join('\n');
-    
+
     // === APLICAR LIMPIEZA ADICIONAL ===
     lyricsText = cleanLyricsText(lyricsText);
-    
+
     // Eliminar saltos de línea excesivos al inicio y final
     lyricsText = lyricsText.replace(/^\n+/, '').replace(/\n+$/, '');
     document.getElementById('lyricsInput').value = lyricsText;
-    
+
     // Cargar fondo si existe y es válido
     if (background && background !== 'null' && background !== '' && background !== 'null') {
         if (background.startsWith('http') || background.startsWith('data:') || background.startsWith('/')) {
@@ -2633,21 +2977,21 @@ function parseImportedSong(content) {
     } else {
         bgImageData = null;
     }
-    
+
     // Actualizar los estilos visuales
     updateStyles();
-    
+
     // Generar la etiqueta automáticamente
     generateTag();
-    
+
     // Procesar las diapositivas con la nueva configuración
     processLyrics();
-    
+
     // Mostrar mensaje de éxito con los datos cargados
     let configLoaded = [];
     if (document.getElementById('addBlankSlide').checked) configLoaded.push("Slide vacío");
     if (document.getElementById('addTitleSlide').checked) configLoaded.push("Portada");
-    
+
     alert(`✅ Canción importada correctamente!\n\n` +
           `📌 Título: ${title}\n` +
           `✍️ Autor: ${author || "(No especificado)"}\n` +
@@ -2660,7 +3004,7 @@ function parseImportedSong(content) {
 function exportSongAsMarkdown() {
     const name = document.getElementById('songName').value.trim() || "Sin título";
     const author = document.getElementById('songAuthor').value.trim();
-    
+
     // Limpiar el nombre de cualquier formato de etiqueta
     let cleanName = name;
     if (cleanName.startsWith('#')) {
@@ -2669,7 +3013,7 @@ function exportSongAsMarkdown() {
             cleanName = tagMatch[1].trim();
         }
     }
-    
+
     // Obtener la configuración actual
     const addBlank = document.getElementById('addBlankSlide').checked;
     const addTitle = document.getElementById('addTitleSlide').checked;
@@ -2682,7 +3026,7 @@ function exportSongAsMarkdown() {
     const alignment = currentAlignment;
     const verticalAlignment = currentVerticalAlignment;
     const bgTransparency = document.getElementById('bgTransparency').checked;
-    
+
     // Construir el front matter YAML mejorado con toda la configuración
     let markdown = "---\n";
     markdown += `title: ${cleanName}\n`;
@@ -2700,20 +3044,20 @@ function exportSongAsMarkdown() {
     markdown += `verticalAlignment: ${verticalAlignment}\n`;
     markdown += `bgTransparency: ${bgTransparency}\n`;
     markdown += "---\n\n";
-    
+
     // Título en formato Markdown
     markdown += `# ${cleanName}\n\n`;
-    
+
     // Autor en formato legible
     if (author) {
         markdown += `**Autor:** ${author}\n\n`;
     }
-    
+
     // La letra (usando slidesData para preservar la estructura exacta)
     if (slidesData.length > 0) {
         // Filtrar la portada y slide vacío si están marcados como automáticos
         let lyricsToExport = slidesData.map(s => ({...s}));
-        
+
         // Si la portada está activada automáticamente, la removemos del texto de letra
         if (addTitle && lyricsToExport.length > 0) {
             const titleText = author ? `${cleanName}\n${author}` : cleanName;
@@ -2723,12 +3067,12 @@ function exportSongAsMarkdown() {
                 lyricsToExport.splice(blankIndex, 1);
             }
         }
-        
+
         // Si el slide vacío está activado automáticamente, lo removemos
         if (addBlank && lyricsToExport.length > 0 && lyricsToExport[0].text.trim() === "") {
             lyricsToExport.splice(0, 1);
         }
-        
+
         // Unir con doble salto de línea para preservar la estructura de diapositivas
         const textArray = lyricsToExport.map(s => {
             let prefix = "";
@@ -2743,12 +3087,12 @@ function exportSongAsMarkdown() {
         const lyrics = document.getElementById('lyricsInput').value.trim();
         markdown += lyrics;
     }
-    
+
     // Asegurar que termine con un salto de línea
     if (!markdown.endsWith('\n')) {
         markdown += '\n';
     }
-    
+
     // Descargar archivo
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -2758,13 +3102,13 @@ function exportSongAsMarkdown() {
     a.download = `${safeName}.md`;
     a.click();
     URL.revokeObjectURL(url);
-    
+
     // Mostrar resumen de lo exportado
     let configSummary = [];
     if (addBlank) configSummary.push("Slide vacío");
     if (addTitle) configSummary.push("Portada");
     configSummary.push(`${linesPerSlide} líneas/diapositiva`);
-    
+
     alert(`✅ Canción exportada correctamente!\n\n` +
           `📌 Archivo: ${safeName}.md\n` +
           `📋 Título: ${cleanName}\n` +
@@ -2777,32 +3121,32 @@ function exportSongAsMarkdown() {
 // --- CONVERTIR PPTX A MD (FORMATO IMPORTABLE) ---
 async function convertPptxToMd(input) {
     if (!input.files || input.files.length === 0) return;
-    
+
     const file = input.files[0];
     if (!file.name.toLowerCase().endsWith('.pptx')) {
         alert("Por favor, selecciona un archivo .pptx válido.");
         return;
     }
-    
+
     showGlobalLoader("Analizando PowerPoint...");
-    
+
     try {
         const arrayBuffer = await file.arrayBuffer();
         const zip = await JSZip.loadAsync(arrayBuffer);
-        
+
         // 1. Extraer texto de las diapositivas (slideX.xml)
-        const slideFiles = Object.keys(zip.files).filter(name => 
+        const slideFiles = Object.keys(zip.files).filter(name =>
             name.match(/ppt\/slides\/slide\d+\.xml$/)
         ).sort((a, b) => {
             const numA = parseInt(a.match(/\d+/)[0]);
             const numB = parseInt(b.match(/\d+/)[0]);
             return numA - numB;
         });
-        
+
         let title = "";
         let author = "";
         let extractedSlides = [];
-        
+
         // 2. Extraer metadatos (título y autor) de core.xml
         if (zip.files['docProps/core.xml']) {
             const coreXml = await zip.files['docProps/core.xml'].async('string');
@@ -2817,7 +3161,7 @@ async function convertPptxToMd(input) {
             const slideXml = await zip.files[slideFiles[i]].async('string');
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(slideXml, "text/xml");
-            
+
             // Extraer texto de los nodos <a:t>
             const textNodes = xmlDoc.getElementsByTagName("a:t");
             let slideText = "";
@@ -2825,10 +3169,10 @@ async function convertPptxToMd(input) {
                 slideText += node.textContent + " ";
             }
             slideText = slideText.trim();
-            
+
             // FILTRO MEJORADO: Ignorar diapositivas que contienen metadatos YAML o configuraciones
             const lowerText = slideText.toLowerCase();
-            const isMetadataSlide = 
+            const isMetadataSlide =
                 lowerText.includes("title:") ||
                 lowerText.includes("author:") ||
                 lowerText.includes("background:") ||
@@ -2845,15 +3189,15 @@ async function convertPptxToMd(input) {
                 lowerText.includes("bgtransparency") ||
                 lowerText === "---" ||
                 slideText === "";
-            
+
             // También filtrar diapositivas que solo contienen "---" o son de la librería
             const isLibraryText = lowerText.includes("pptxgenjs");
-            
+
             if (slideText && !isMetadataSlide && !isLibraryText) {
                 extractedSlides.push(slideText);
             }
         }
-        
+
         // Limpieza final de título y autor
         if (title && (title.toLowerCase().includes("pptxgenjs") || title === "")) {
             title = file.name.replace(/\.pptx$/i, '');
@@ -2861,12 +3205,12 @@ async function convertPptxToMd(input) {
         if (author && author.toLowerCase().includes("pptxgenjs")) {
             author = "";
         }
-        
+
         // Si no se encontró título, usar el nombre del archivo
         if (!title) {
             title = file.name.replace(/\.pptx$/i, '');
         }
-        
+
         // Si el título parece una etiqueta (#Algo), extraer solo el nombre
         if (title.startsWith('#')) {
             const tagMatch = title.match(/^#([^(]+)/);
@@ -2874,17 +3218,17 @@ async function convertPptxToMd(input) {
                 title = tagMatch[1].trim();
             }
         }
-        
+
         // Limpiar título y autor de caracteres especiales
         title = title.replace(/[#*_]/g, '').trim();
         author = author.replace(/[#*_]/g, '').trim();
-        
+
         // 4. CONSTRUIR EL NUEVO FORMATO MD
         let markdown = "---\n";
         markdown += `title: ${title}\n`;
         if (author) markdown += `author: ${author}\n`;
         markdown += `background: null\n`;
-        
+
         // CONFIGURACIÓN PREDETERMINADA (sensata para worship)
         markdown += `addBlankSlide: false\n`;  // CAMBIADO: false por defecto
         markdown += `addTitleSlide: false\n`;  // CAMBIADO: false por defecto
@@ -2898,15 +3242,15 @@ async function convertPptxToMd(input) {
         markdown += `verticalAlignment: center\n`;
         markdown += `bgTransparency: false\n`;
         markdown += "---\n\n";
-        
+
         // Título en formato Markdown
         markdown += `# ${title}\n\n`;
-        
+
         // Autor en formato legible
         if (author) {
             markdown += `**Autor:** ${author}\n\n`;
         }
-        
+
         // LA LETRA: Unir solo las diapositivas que son contenido real
         if (extractedSlides.length > 0) {
             // Limpiar cada slide
@@ -2918,12 +3262,12 @@ async function convertPptxToMd(input) {
         } else {
             markdown += "*No se pudo extraer texto significativo del archivo PPTX.*";
         }
-        
+
         // Asegurar que termine con un salto de línea
         if (!markdown.endsWith('\n')) {
             markdown += '\n';
         }
-        
+
         // 5. Descargar el archivo MD
         const blob = new Blob([markdown], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
@@ -2933,7 +3277,7 @@ async function convertPptxToMd(input) {
         a.download = `${safeName}.md`;
         a.click();
         URL.revokeObjectURL(url);
-        
+
         alert(`✅ ¡Conversión exitosa!\n\n` +
               `📌 Título: ${title}\n` +
               `✍️ Autor: ${author || "(No detectado)"}\n` +
@@ -2941,7 +3285,7 @@ async function convertPptxToMd(input) {
               `⚙️ Configuración: addBlankSlide: false, addTitleSlide: false\n\n` +
               `💡 Las opciones de portada y slide vacío están DESACTIVADAS por defecto,\n` +
               `   ya que el PPTX original ya contiene su propia estructura.`);
-        
+
     } catch (error) {
         console.error("Error al convertir PPTX:", error);
         alert("Error al procesar el archivo PPTX: " + error.message);
@@ -3145,9 +3489,9 @@ async function pasteLyricsFromClipboard() {
             const endPos = input.selectionEnd;
             input.value = input.value.substring(0, startPos) + text + input.value.substring(endPos, input.value.length);
             input.focus();
-            
+
             updateSlidesRealTime();
-            
+
             const btn = document.querySelector('span[onclick="pasteLyricsFromClipboard()"]');
             if(btn) {
                 const originalHTML = btn.innerHTML;
@@ -3164,13 +3508,13 @@ async function pasteLyricsFromClipboard() {
 window.addEventListener('scroll', () => {
     const scrollBtn = document.getElementById('scrollBtn');
     if (!scrollBtn) return;
-    
+
     // Mostrar siempre el botón de scroll
     scrollBtn.style.display = 'flex';
-    
+
     const isAtBottom = (window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50;
     const isAtTop = window.scrollY < 100;
-    
+
     if (isAtBottom) {
         scrollBtn.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
         scrollBtn.setAttribute('data-direction', 'up');
@@ -3201,15 +3545,15 @@ function searchInLyrics() {
     const searchTerm = document.getElementById('lyricsSearch').value;
     const textarea = document.getElementById('lyricsInput');
     const countDisplay = document.getElementById('searchCount');
-    
+
     if (!searchTerm) {
         countDisplay.classList.add('hidden');
         return;
     }
-    
+
     const text = textarea.value;
     const matches = text.toLowerCase().split(searchTerm.toLowerCase()).length - 1;
-    
+
     if (matches > 0) {
         countDisplay.classList.remove('hidden');
         countDisplay.textContent = `${matches} coincidencia(s)`;
@@ -3221,18 +3565,26 @@ function searchInLyrics() {
 
 // --- PANTALLA COMPLETA PARA LETRA ---
 let lyricsFontSize = 18;
+let lyricsHistory = [];
+const LYRICS_HISTORY_MAX = 50;
+let _fsEditInit = false;
+let _fsBurstArmed = false;
+let _fsBurstTimer = null;
 
 function openLyricsFullscreen() {
     const modal = document.getElementById('lyricsFullscreenModal');
     const textContent = document.getElementById('lyricsFullscreenText');
     const textarea = document.getElementById('lyricsInput');
-    
+
     textContent.textContent = textarea.value || 'No hay letra para mostrar.';
     updateLyricsLineCount();
-    
+    if (typeof lyricsHistory !== 'undefined') lyricsHistory.length = 0;
+    if (typeof updateUndoBtn === 'function') updateUndoBtn();
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+    if (typeof initFullscreenEditing === 'function') initFullscreenEditing();
 }
 
 function closeLyricsFullscreen() {
@@ -3240,10 +3592,10 @@ function closeLyricsFullscreen() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.body.style.overflow = '';
-    
-    // Limpiar búsqueda
+
     document.getElementById('lyricsFullscreenSearch').value = '';
-    document.getElementById('lyricsFullscreenText').innerHTML = document.getElementById('lyricsFullscreenText').textContent;
+    const _lfsText = document.getElementById('lyricsFullscreenText');
+    if (_lfsText) _lfsText.innerHTML = (_lfsText.innerText || '');
 }
 
 function increaseLyricsFontSize() {
@@ -3268,7 +3620,8 @@ function updateLyricsFontSize() {
 }
 
 function updateLyricsLineCount() {
-    const text = document.getElementById('lyricsFullscreenText').textContent;
+    const _lfsEl = document.getElementById('lyricsFullscreenText');
+    const text = _lfsEl ? (_lfsEl.innerText || '') : '';
     const lines = text.split('\n').filter(line => line.trim()).length;
     document.getElementById('lyricsLineCount').textContent = `${lines} líneas`;
 }
@@ -3280,9 +3633,9 @@ let fullscreenMatches = [];
 function searchInFullscreenLyrics() {
     const searchTerm = document.getElementById('lyricsFullscreenSearch').value;
     const textElement = document.getElementById('lyricsFullscreenText');
-    const originalText = textElement.textContent;
+    const originalText = textElement.innerText || '';
     const countDisplay = document.getElementById('fullscreenSearchCount');
-    
+
     if (!searchTerm) {
         textElement.innerHTML = originalText;
         countDisplay.textContent = '0/0';
@@ -3290,17 +3643,17 @@ function searchInFullscreenLyrics() {
         fullscreenSearchIndex = 0;
         return;
     }
-    
+
     const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
     const matches = originalText.match(regex);
-    
+
     if (matches) {
         fullscreenMatches = matches;
         fullscreenSearchIndex = 0;
-        
+
         const highlightedText = originalText.replace(regex, '<mark class="bg-yellow-500 text-black px-1 rounded">$1</mark>');
         textElement.innerHTML = highlightedText;
-        
+
         countDisplay.textContent = `1/${matches.length}`;
         scrollToFirstMatch();
     } else {
@@ -3312,7 +3665,7 @@ function searchInFullscreenLyrics() {
 
 function findNextMatch() {
     if (fullscreenMatches.length === 0) return;
-    
+
     fullscreenSearchIndex = (fullscreenSearchIndex + 1) % fullscreenMatches.length;
     document.getElementById('fullscreenSearchCount').textContent = `${fullscreenSearchIndex + 1}/${fullscreenMatches.length}`;
     scrollToMatch(fullscreenSearchIndex);
@@ -3320,7 +3673,7 @@ function findNextMatch() {
 
 function findPreviousMatch() {
     if (fullscreenMatches.length === 0) return;
-    
+
     fullscreenSearchIndex = (fullscreenSearchIndex - 1 + fullscreenMatches.length) % fullscreenMatches.length;
     document.getElementById('fullscreenSearchCount').textContent = `${fullscreenSearchIndex + 1}/${fullscreenMatches.length}`;
     scrollToMatch(fullscreenSearchIndex);
@@ -3364,15 +3717,1042 @@ document.addEventListener('DOMContentLoaded', () => {
         const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
         const nextSunday = new Date(today);
         nextSunday.setDate(today.getDate() + daysUntilSunday);
-        
-        const meses = ["agosto", "septiembre", "octubre", "noviembre", "diciembre", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio"];
-        // Arreglando el índice de los meses
+
         const nombresMeses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-        
+
         const day = String(nextSunday.getDate()).padStart(2, '0');
         const month = nombresMeses[nextSunday.getMonth()];
         const year = nextSunday.getFullYear();
-        
+
         repFileNameInput.value = `domingo ${day} ${month} ${year}`;
     }
+
+    // v14: Inicializar nuevas funciones 1,3,7,8,11
+    try{ initAutoSave(); }catch(e){ console.warn('initAutoSave', e); }
+    try{ loadRecentSongs(); renderRecentSongs(); }catch(e){ console.warn('recent', e); }
+    try{ initDragDrop(); }catch(e){ console.warn('dragdrop', e); }
+    try{ loadSessionFromLocalStorage(); }catch(e){ console.warn('loadSession', e); }
 });
+/* ============================================================
+
+
+/* === CLEAN: Funciones de pantalla completa sin transcripcion === */
+
+function toggleFullscreenSearch(){
+    const container = document.getElementById('fullscreenSearchContainer');
+    const btn = document.getElementById('fullscreenSearchToggleBtn');
+    if(!container) return;
+    const isHidden = container.classList.contains('hidden');
+    if(isHidden){
+        container.classList.remove('hidden');
+        // Focus input
+        setTimeout(()=>{
+            const input = document.getElementById('lyricsFullscreenSearch');
+            if(input) input.focus();
+        }, 100);
+        if(btn) btn.classList.add('bg-blue-600');
+    }else{
+        container.classList.add('hidden');
+        if(btn) btn.classList.remove('bg-blue-600');
+        // Limpiar busqueda al cerrar
+        const input = document.getElementById('lyricsFullscreenSearch');
+        const count = document.getElementById('fullscreenSearchCount');
+        const textEl = document.getElementById('lyricsFullscreenText');
+        if(input) input.value='';
+        if(count) count.textContent='0/0';
+        if(textEl) textEl.innerHTML = textEl.innerText || '';
+    }
+}
+
+
+function sendFullscreenToEditor(andProcess = false) {
+    const textEl = document.getElementById('lyricsFullscreenText');
+    const editor = document.getElementById('lyricsInput');
+    if (!textEl || !editor) return;
+    const txt = (textEl.innerText || '').trim();
+    if (!txt || txt === 'No hay letra para mostrar.') {
+        alert("No hay texto para pasar al editor.");
+        return;
+    }
+    editor.value = txt;
+    closeLyricsFullscreen();
+    if (andProcess) {
+        if (typeof processLyrics === 'function') processLyrics();
+        else if (typeof refreshSlidesFromCurrentState === 'function') refreshSlidesFromCurrentState();
+    } else if (typeof updateSlidesRealTime === 'function') {
+        try { updateSlidesRealTime(); } catch (e) {}
+    }
+    if (typeof scrollToSection === 'function') scrollToSection('diapositivas');
+}
+
+
+async function importPptxToEditor(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (!file.name.toLowerCase().endsWith('.pptx')) {
+        alert("Por favor, selecciona un archivo .pptx válido.");
+        input.value = '';
+        return;
+    }
+    if (typeof JSZip === 'undefined') {
+        alert("No se pudo cargar JSZip (revisa tu conexión). No es posible leer el PPTX.");
+        input.value = '';
+        return;
+    }
+    showGlobalLoader("Abriendo PowerPoint...");
+
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+
+        const slideFiles = Object.keys(zip.files)
+            .filter(n => n.match(/ppt\/slides\/slide\d+\.xml$/))
+            .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
+
+        if (slideFiles.length === 0) throw new Error("No se encontraron diapositivas en el archivo.");
+
+        // Metadatos
+        let title = '', author = '';
+        if (zip.files['docProps/core.xml']) {
+            try {
+                const coreXml = await zip.files['docProps/core.xml'].async('string');
+                const coreDoc = new DOMParser().parseFromString(coreXml, "text/xml");
+                title = coreDoc.getElementsByTagName("dc:title")[0]?.textContent || '';
+                author = coreDoc.getElementsByTagName("dc:creator")[0]?.textContent || '';
+            } catch (e) {}
+        }
+
+        // Extracción por párrafos (<a:p>) para conservar saltos de línea
+        const parser = new DOMParser();
+        let extractedSlides = [];
+        for (const slidePath of slideFiles) {
+            const xml = await zip.files[slidePath].async('string');
+            const xmlDoc = parser.parseFromString(xml, "text/xml");
+            const paragraphs = xmlDoc.getElementsByTagName("a:p");
+            let lines = [];
+            for (const p of paragraphs) {
+                const runs = p.getElementsByTagName("a:t");
+                let line = '';
+                for (const r of runs) line += r.textContent;
+                line = line.replace(/\s+/g, ' ').trim();
+                if (line) lines.push(line);
+            }
+            let slideText = lines.join('\n').trim();
+            const lower = slideText.toLowerCase();
+            const isMeta = !slideText ||
+                lower.includes("title:") || lower.includes("author:") ||
+                lower.includes("background:") || lower.includes("addblank") ||
+                lower.includes("addtitle") || lower.includes("linesperslide") ||
+                lower.includes("fontfamily") || lower.includes("fontsize") ||
+                lower.includes("textcolor") || lower.includes("textbold") ||
+                lower.includes("textshadow") || lower.includes("alignment") ||
+                lower.includes("verticalalignment") || lower.includes("bgtransparency") ||
+                lower.includes("pptxgenjs") || slideText === "---";
+            if (!isMeta) extractedSlides.push(slideText);
+        }
+
+        if (extractedSlides.length === 0) {
+            alert("No se encontró texto aprovechable en el PPTX.\n\nPuede ser un archivo solo con imágenes.");
+            return;
+        }
+
+        // Título/autor de respaldo
+        const baseName = file.name.replace(/\.pptx$/i, '').trim();
+        if (!title || title.toLowerCase().includes("pptxgenjs")) title = baseName;
+        if (author && author.toLowerCase().includes("pptxgenjs")) author = '';
+        if (title.startsWith('#')) {
+            const m = title.match(/^#([^(]+)/);
+            if (m) title = m[1].trim();
+        }
+        title = title.replace(/[#*_]/g, '').trim() || baseName;
+        author = (author || '').replace(/[#*_]/g, '').trim();
+
+        // tag #Titulo (Autor)? -> separar
+        let tagAuthor = '';
+        const tagMatch = baseName.match(/^#?\s*([^(#]+?)\s*(?:\(([^)]+)\))?\s*$/);
+        if (!author && tagMatch && tagMatch[2]) tagAuthor = tagMatch[2].trim();
+
+        // Cargar al editor
+        const lyricsText = extractedSlides.join('\n\n');
+        document.getElementById('lyricsInput').value = lyricsText;
+        const songNameEl = document.getElementById('songName');
+        const songAuthorEl = document.getElementById('songAuthor');
+        if (songNameEl && !songNameEl.value.trim()) songNameEl.value = toTitleCase(title);
+        if (songAuthorEl && !songAuthorEl.value.trim()) songAuthorEl.value = toTitleCase(author || tagAuthor);
+        if (typeof updateFilenamePreview === 'function') updateFilenamePreview();
+        if (typeof processLyrics === 'function') processLyrics();
+        else if (typeof refreshSlidesFromCurrentState === 'function') refreshSlidesFromCurrentState();
+        if (typeof scrollToSection === 'function') scrollToSection('diapositivas');
+
+        const lineCount = lyricsText.split('\n').filter(l => l.trim()).length;
+        alert(`✅ PowerPoint abierto en el editor\n\n📌 Canción: ${title}\n✍️ Autor: ${author || tagAuthor || "(no detectado)"}\n📄 Diapositivas con texto: ${extractedSlides.length}\n📝 Líneas cargadas: ${lineCount}\n\n💡 El texto quedó en "Letra Completa" y las diapositivas ya se generaron.`);
+    } catch (err) {
+        console.error("Error al importar PPTX:", err);
+        alert("Error al abrir el PowerPoint: " + err.message);
+    } finally {
+        hideGlobalLoader();
+        input.value = '';
+    }
+}
+
+
+/* === ACTUALIZACIÓN 2 — A: REEMPLAZAR + DESHACER (limpio) === */
+
+
+
+function getFullscreenPlainText() {
+    const el = document.getElementById('lyricsFullscreenText');
+    if (!el) return '';
+    const t = (el.innerText || '').replace(/\s+$/, '');
+    return t === 'No hay letra para mostrar.' ? '' : t;
+}
+
+
+function setFullscreenPlainText(text) {
+    const el = document.getElementById('lyricsFullscreenText');
+    if (!el) return;
+    const s = document.getElementById('lyricsFullscreenSearch');
+    if (s) s.value = '';
+    const c = document.getElementById('fullscreenSearchCount');
+    if (c) c.textContent = '0/0';
+    try { fullscreenMatches = []; fullscreenSearchIndex = 0; } catch (e) {}
+    el.textContent = text || 'No hay letra para mostrar.';
+    updateLyricsLineCount();
+}
+
+
+function syncFullscreenToEditor() {
+    const editor = document.getElementById('lyricsInput');
+    if (editor) editor.value = getFullscreenPlainText();
+}
+
+
+function pushLyricsHistory() {
+    const current = getFullscreenPlainText();
+    const last = lyricsHistory.length ? lyricsHistory[lyricsHistory.length - 1] : null;
+    if (last === current) return;
+    lyricsHistory.push(current);
+    if (lyricsHistory.length > LYRICS_HISTORY_MAX) lyricsHistory.shift();
+    updateUndoBtn();
+}
+
+
+function undoLyricsChange() {
+    if (lyricsHistory.length === 0) {
+        alert("No hay cambios para deshacer.");
+        return;
+    }
+    const prev = lyricsHistory.pop();
+    setFullscreenPlainText(prev);
+    syncFullscreenToEditor();
+    updateUndoBtn();
+    const btn = document.getElementById('undoLyricsBtn');
+    if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Listo';
+        setTimeout(() => { btn.innerHTML = orig; }, 1200);
+    }
+}
+
+
+function updateUndoBtn() {
+    const btn = document.getElementById('undoLyricsBtn');
+    if (!btn) return;
+    const n = lyricsHistory.length;
+    btn.disabled = n === 0;
+    btn.classList.toggle('opacity-40', n === 0);
+    btn.classList.toggle('cursor-not-allowed', n === 0);
+    btn.title = n === 0 ? 'No hay cambios para deshacer' : `Deshacer último cambio (${n} en historial)`;
+}
+
+
+function applyReplaceAll(text, find, replacement, caseSensitive) {
+    if (!find) return { text: text, count: 0 };
+    const flags = caseSensitive ? 'g' : 'gi';
+    const regex = new RegExp(escapeRegExp(find), flags);
+    const matches = (text || '').match(regex);
+    const count = matches ? matches.length : 0;
+    if (count === 0) return { text: text, count: 0 };
+    return { text: (text || '').replace(regex, () => replacement), count };
+}
+
+
+function toggleReplacePanel() {
+    const panel = document.getElementById('replacePanel');
+    if (!panel) return;
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+        const f = document.getElementById('replaceFind');
+        if (f) setTimeout(() => f.focus(), 50);
+    }
+}
+
+
+function replaceAllInFullscreen() {
+    const findEl = document.getElementById('replaceFind');
+    const replEl = document.getElementById('replaceWith');
+    const caseEl = document.getElementById('replaceCaseSensitive');
+    const resultEl = document.getElementById('replaceResult');
+    const find = findEl ? findEl.value : '';
+    const repl = replEl ? replEl.value : '';
+    const caseSensitive = !!(caseEl && caseEl.checked);
+    if (!find) {
+        if (resultEl) resultEl.textContent = 'Escribe la palabra a buscar.';
+        return;
+    }
+    const current = getFullscreenPlainText();
+    if (!current) {
+        if (resultEl) resultEl.textContent = 'No hay texto para modificar.';
+        return;
+    }
+    const res = applyReplaceAll(current, find, repl, caseSensitive);
+    if (res.count === 0) {
+        if (resultEl) resultEl.textContent = `Sin coincidencias para "${find}".`;
+        return;
+    }
+    pushLyricsHistory();
+    setFullscreenPlainText(res.text);
+    syncFullscreenToEditor();
+    if (resultEl) resultEl.textContent = `✅ ${res.count} reemplazo(s): "${find}" → "${repl}".`;
+}
+
+
+/* === ACTUALIZACIÓN 3 — B: LETRA EDITABLE + LIMPIAR (limpio) === */
+
+
+
+function initFullscreenEditing() {
+    if (_fsEditInit) return;
+    const el = document.getElementById('lyricsFullscreenText');
+    if (!el) return;
+    _fsEditInit = true;
+    // Preferir solo-texto-plano (Chrome/Edge); respaldo a editable normal
+    el.setAttribute('contenteditable', 'plaintext-only');
+    if (el.isContentEditable !== true) el.setAttribute('contenteditable', 'true');
+    el.setAttribute('spellcheck', 'false');
+    // Pegar siempre como texto plano
+    el.addEventListener('paste', (e) => {
+        try {
+            const clip = e.clipboardData || window.clipboardData;
+            if (!clip) return;
+            e.preventDefault();
+            const text = clip.getData('text/plain');
+            if (text) document.execCommand('insertText', false, text);
+        } catch (err) {}
+    });
+    // Punto de "Deshacer" antes de cada ráfaga de escritura
+    el.addEventListener('beforeinput', () => {
+        if (!_fsBurstArmed && typeof pushLyricsHistory === 'function') {
+            pushLyricsHistory();
+            _fsBurstArmed = true;
+        }
+    });
+    // Sincronizar con el editor en cada cambio
+    el.addEventListener('input', () => {
+        if (typeof syncFullscreenToEditor === 'function') syncFullscreenToEditor();
+        if (typeof updateLyricsLineCount === 'function') updateLyricsLineCount();
+        clearTimeout(_fsBurstTimer);
+        _fsBurstTimer = setTimeout(() => { _fsBurstArmed = false; }, 1200);
+    });
+    el.addEventListener('focus', () => {
+        if ((el.innerText || '').trim() === 'No hay letra para mostrar.') el.textContent = '';
+    });
+    el.addEventListener('blur', () => {
+        if (!(el.innerText || '').trim()) {
+            if (typeof syncFullscreenToEditor === 'function') syncFullscreenToEditor();
+            el.textContent = 'No hay letra para mostrar.';
+            if (typeof updateLyricsLineCount === 'function') updateLyricsLineCount();
+        }
+    });
+}
+
+
+// v11: Ctrl+F abre busqueda en pantalla completa
+document.addEventListener('keydown', (e)=>{
+    const modal = document.getElementById('lyricsFullscreenModal');
+    if(!modal || modal.classList.contains('hidden')) return;
+    if((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='f'){
+        e.preventDefault();
+        if(typeof toggleFullscreenSearch==='function') toggleFullscreenSearch();
+    }
+});
+
+
+function clearFullscreenLyrics() {
+    const current = (typeof getFullscreenPlainText === 'function') ? getFullscreenPlainText() : '';
+    if (!current) {
+        alert("No hay letra para limpiar.");
+        return;
+    }
+    const lines = current.split('\n').filter(l => l.trim()).length;
+    if (!confirm(`¿Borrar TODA la letra (${lines} líneas)?\n\nTambién se borrará en el editor.\nPodrás revertirlo con "Deshacer".`)) return;
+    if (typeof pushLyricsHistory === 'function') pushLyricsHistory();
+    if (typeof setFullscreenPlainText === 'function') setFullscreenPlainText('');
+    if (typeof syncFullscreenToEditor === 'function') syncFullscreenToEditor();
+}
+
+
+
+/* ============================================================
+   v14 - NUEVAS FUNCIONES 1,3,7,8,11
+   1: Auto-guardado localStorage
+   3: Búsqueda en repertorio
+   7: Drag & Drop imágenes + Swipe mejorado
+   8: Recientes (10)
+   11: Modo Ensayo auto-scroll
+   ============================================================ */
+
+// ---------- 1: Auto-guardado ----------
+let autoSaveTimer = null;
+const AUTO_SAVE_KEY = 'wt_session_v14';
+const AUTO_SAVE_INTERVAL_MS = 300000; // 5 minutos // 5 minutos // 10s
+
+function saveSessionToLocalStorage(isManual=false){
+    try{
+        const data = {
+            songName: document.getElementById('songName')?.value || '',
+            songAuthor: document.getElementById('songAuthor')?.value || '',
+            lyricsInput: document.getElementById('lyricsInput')?.value || '',
+            exportFileName: document.getElementById('exportFileName')?.value || '',
+            repertoireFileName: document.getElementById('repertoireFileName')?.value || '',
+            fontFamily: document.getElementById('fontFamily')?.value || 'Cambria',
+            fontSize: document.getElementById('fontSize')?.value || '55',
+            textColor: document.getElementById('textColor')?.value || '#000000',
+            textBold: document.getElementById('textBold')?.checked || false,
+            textShadow: document.getElementById('textShadow')?.checked || false,
+            bgTransparency: document.getElementById('bgTransparency')?.checked || false,
+            currentAlignment: typeof currentAlignment !== 'undefined' ? currentAlignment : 'center',
+            currentVerticalAlignment: typeof currentVerticalAlignment !== 'undefined' ? currentVerticalAlignment : 'center',
+            slidesData: typeof slidesData !== 'undefined' ? slidesData : [],
+            repertoireList: typeof repertoireList !== 'undefined' ? repertoireList : [],
+            bgRegistry: typeof bgRegistry !== 'undefined' ? bgRegistry : {},
+            timestamp: Date.now()
+        };
+        localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
+        updateAutoSaveStatus('Guardado', isManual);
+        // console.log('[AutoSave] guardado', new Date().toLocaleTimeString());
+    }catch(e){
+        console.warn('[AutoSave] error guardando', e);
+        updateAutoSaveStatus('Error', false);
+    }
+}
+
+function loadSessionFromLocalStorage(){
+    try{
+        const raw = localStorage.getItem(AUTO_SAVE_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        if(!data || !data.timestamp) return;
+        // Si tiene menos de 7 dias, preguntar restaurar
+        const ageDays = (Date.now() - data.timestamp) / (1000*60*60*24);
+        if(ageDays > 7) {
+            localStorage.removeItem(AUTO_SAVE_KEY);
+            return;
+        }
+        // Si ya hay contenido, no preguntar a menos que sea manual
+        const currentLyrics = document.getElementById('lyricsInput')?.value?.trim() || '';
+        const savedLyrics = data.lyricsInput?.trim() || '';
+        if(!savedLyrics) return;
+        if(currentLyrics && currentLyrics === savedLyrics) return;
+
+        const shouldRestore = confirm(`🔄 Sesión guardada encontrada (${new Date(data.timestamp).toLocaleString()})\n\n¿Restaurar?\n\nCanción: ${data.songName || 'Sin título'}\nAutor: ${data.songAuthor || ''}\nDiapositivas: ${data.slidesData?.length || 0}\nRepertorio: ${data.repertoireList?.length || 0} canciones\n\nSe restaurará letra, repertorio y estilos.`);
+        if(!shouldRestore) return;
+
+        if(data.songName) document.getElementById('songName').value = data.songName;
+        if(data.songAuthor) document.getElementById('songAuthor').value = data.songAuthor;
+        if(data.lyricsInput) document.getElementById('lyricsInput').value = data.lyricsInput;
+        if(data.exportFileName) document.getElementById('exportFileName').value = data.exportFileName;
+        if(data.repertoireFileName) document.getElementById('repertoireFileName').value = data.repertoireFileName;
+        if(data.fontFamily) document.getElementById('fontFamily').value = data.fontFamily;
+        if(data.fontSize) document.getElementById('fontSize').value = data.fontSize;
+        if(data.textColor) document.getElementById('textColor').value = data.textColor;
+        if(data.textBold !== undefined) document.getElementById('textBold').checked = data.textBold;
+        if(data.textShadow !== undefined) document.getElementById('textShadow').checked = data.textShadow;
+        if(data.bgTransparency !== undefined) document.getElementById('bgTransparency').checked = data.bgTransparency;
+        if(data.currentAlignment) currentAlignment = data.currentAlignment;
+        if(data.currentVerticalAlignment) currentVerticalAlignment = data.currentVerticalAlignment;
+        if(data.slidesData) slidesData = data.slidesData;
+        if(data.repertoireList) repertoireList = data.repertoireList;
+        if(data.bgRegistry) bgRegistry = data.bgRegistry;
+
+        // Re-render
+        try{ renderSlides(); }catch(e){}
+        try{ renderRepertoireList(); }catch(e){}
+        try{ renderQuickCopyList(); }catch(e){}
+        try{ updateStyles(); }catch(e){}
+        try{ generateTag(); }catch(e){}
+        updateAutoSaveStatus('Restaurado', false);
+        alert('✅ Sesión restaurada');
+    }catch(e){
+        console.warn('[AutoSave] error cargando', e);
+    }
+}
+
+function clearSavedSession(){
+    if(confirm('¿Borrar sesión guardada? No se podrá recuperar.')){
+        localStorage.removeItem(AUTO_SAVE_KEY);
+        updateAutoSaveStatus('Borrado', false);
+    }
+}
+
+function updateAutoSaveStatus(text, isManual){
+    const statusEl = document.getElementById('autoSaveStatus');
+    const textEl = document.getElementById('autoSaveText');
+    if(!statusEl || !textEl) return;
+    statusEl.classList.remove('hidden');
+    statusEl.classList.add('flex');
+    // Texto compacto con icono
+    let short = '5m';
+    if(text === 'Guardando...') short = '...';
+    else if(text === 'Guardado') short = isManual ? '✓' : '5m';
+    else if(text === 'Restaurado') short = '↺';
+    else if(text === 'Borrado') short = '✕';
+    else short = text.substring(0,3);
+    textEl.textContent = short;
+
+    if(text === 'Guardando...'){
+        statusEl.className = 'flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border bg-amber-950/30 border-amber-500/20 text-amber-400';
+    } else if(text === 'Guardado' || text === 'Restaurado'){
+        statusEl.className = 'flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border border-green-500/20 bg-green-950/30 text-green-400';
+    } else {
+        statusEl.className = 'flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border border-slate-500/20 bg-slate-800/50 text-slate-400';
+    }
+    // Auto-hide after 4s
+    if(!isManual){
+        setTimeout(()=>{
+            if(textEl.textContent === short){
+                statusEl.classList.add('hidden');
+                statusEl.classList.remove('flex');
+            }
+        }, 4000);
+    }
+}
+
+function initAutoSave(){
+    // Guardar cada 10s
+    if(autoSaveTimer) clearInterval(autoSaveTimer);
+    autoSaveTimer = setInterval(()=>{
+        const lyrics = document.getElementById('lyricsInput')?.value?.trim() || '';
+        const repCount = (typeof repertoireList !== 'undefined' ? repertoireList.length : 0);
+        if(lyrics || repCount > 0){
+            updateAutoSaveStatus('Guardando...', false);
+            setTimeout(()=> saveSessionToLocalStorage(false), 300);
+        }
+    }, AUTO_SAVE_INTERVAL_MS);
+
+    // Guardar al salir
+    window.addEventListener('beforeunload', ()=>{
+        try{ saveSessionToLocalStorage(false); }catch(e){}
+    });
+
+    // Guardar en cambios importantes
+    ['songName','songAuthor','lyricsInput','fontFamily','fontSize'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el){
+            el.addEventListener('change', ()=> saveSessionToLocalStorage(false));
+        }
+    });
+    console.log('[AutoSave] iniciado cada', AUTO_SAVE_INTERVAL_MS/1000/60, 'min');
+}
+
+// ---------- 3: Búsqueda en repertorio ----------
+let repertoireSearchTerm = '';
+
+function searchRepertoire(){
+    const input = document.getElementById('repertoireSearch');
+    if(!input) return;
+    repertoireSearchTerm = input.value.trim().toLowerCase();
+    renderRepertoireList();
+}
+
+function getFilteredRepertoire(){
+    if(!repertoireSearchTerm) return repertoireList;
+    return repertoireList.filter((item, idx)=>{
+        const name = (item.name || '').toLowerCase();
+        return name.includes(repertoireSearchTerm) || (''+ (idx+1)).includes(repertoireSearchTerm);
+    });
+}
+
+// Sobrescribir renderRepertoireList para usar filtro (guardamos original si existe)
+let _originalRenderRepertoireList = null;
+if(typeof renderRepertoireList === 'function'){
+    _originalRenderRepertoireList = renderRepertoireList;
+}
+
+function renderRepertoireList(){
+    const list = document.getElementById('repertoireList');
+    const preview = document.getElementById('repertorioPreview');
+    const previewCount = document.getElementById('repertorioPreviewCount');
+    const countEl = document.getElementById('repertoireCount');
+    if(countEl) countEl.innerText = repertoireList.length;
+    if(previewCount) previewCount.innerText = repertoireList.length;
+    if(!list) return;
+    list.innerHTML = "";
+
+    const filtered = getFilteredRepertoire();
+
+    if (repertoireList.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-xs text-center mt-10 italic">La lista está vacía.</p>';
+        if(preview) preview.classList.add('hidden');
+        return;
+    }
+
+    if(filtered.length === 0){
+        list.innerHTML = `<p class="text-slate-500 text-xs text-center mt-10 italic">Sin resultados para "${repertoireSearchTerm}"</p>`;
+        return;
+    }
+
+    // Show preview if container is hidden and there are songs
+    if (typeof repertorioVisible !== 'undefined' && !repertorioVisible) {
+        if(preview) preview.classList.remove('hidden');
+    }
+
+    // Para mantener índices originales al filtrar, necesitamos mapear
+    filtered.forEach((item, filteredIdx)=>{
+        const originalIndex = repertoireList.indexOf(item);
+        const el = document.createElement('div');
+        el.className = 'repertoire-item group bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 flex items-center justify-between mb-2 transition-colors';
+        const processedSlides = typeof processSongInsertions === 'function' ? processSongInsertions(item) : item.slides;
+        const totalSlides = processedSlides ? processedSlides.length : 0;
+        const insertionCount = item.insertions ? item.insertions.length : 0;
+
+        el.innerHTML = `
+            <div class="flex items-center gap-3 overflow-hidden flex-1">
+                <span class="text-amber-600 dark:text-amber-500 font-bold text-xs w-4">${originalIndex + 1}.</span>
+                <i class="fa-solid fa-music text-blue-500"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-slate-800 dark:text-white font-bold truncate">${escapeHtml(item.name)}</p>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400">${totalSlides} diapositivas${insertionCount > 0 ? ` (+${insertionCount} inserción${insertionCount > 1 ? 'es' : ''})` : ''}</p>
+                </div>
+            </div>
+            <div class="flex gap-1 sm:gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <button onclick="renameRepertoireItem(${originalIndex})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-amber-500 hover:text-white transition" title="Cambiar nombre">
+                    <i class="fa-solid fa-pen text-[10px]"></i>
+                </button>
+                <button onclick="openInsertionModal(${originalIndex})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-purple-500 hover:text-white transition" title="Insertar canción">
+                    <i class="fa-solid fa-code-merge text-[10px]"></i>
+                </button>
+                <button onclick="loadFromRepertoire(${originalIndex})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-blue-500 hover:text-white transition" title="Cargar en el Editor">
+                    <i class="fa-solid fa-arrow-up-from-bracket text-[10px]"></i>
+                </button>
+                <button onclick="removeRepertoireItem(${originalIndex})" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-500 hover:text-white transition" title="Eliminar">
+                    <i class="fa-solid fa-trash text-[10px]"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(el);
+    });
+
+    if (list && typeof Sortable !== 'undefined' && !repertoireSearchTerm) {
+        new Sortable(list, {
+            animation: 150,
+            handle: '.repertoire-item',
+            onEnd: function (evt) {
+                const item = repertoireList.splice(evt.oldIndex, 1)[0];
+                repertoireList.splice(evt.newIndex, 0, item);
+                renderRepertoireList();
+                try{ saveSessionToLocalStorage(); }catch(e){}
+            }
+        });
+    }
+}
+
+// ---------- 7: Drag & Drop imágenes ----------
+function initDragDrop(){
+    const dropOverlay = document.getElementById('dropOverlay');
+    const slidesContainer = document.getElementById('slidesContainer');
+    const editorContainer = document.getElementById('editorContainer');
+
+    // Global drag events para mostrar overlay
+    ['dragenter','dragover'].forEach(evt=>{
+        document.addEventListener(evt, (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            if(e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')){
+                if(dropOverlay){
+                    dropOverlay.classList.remove('hidden');
+                    dropOverlay.classList.add('flex');
+                }
+            }
+        });
+    });
+
+    ['dragleave','drop'].forEach(evt=>{
+        document.addEventListener(evt, (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            if(dropOverlay){
+                dropOverlay.classList.add('hidden');
+                dropOverlay.classList.remove('flex');
+            }
+        });
+    });
+
+    // Drop handling
+    document.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if(!files || files.length===0) return;
+        const file = files[0];
+        if(file.type.startsWith('image/')){
+            handleDroppedImage(file, e);
+        } else if(file.name.endsWith('.pptx')){
+            alert('Para PPTX usa el botón Importar PPTX al Editor, no drag & drop');
+        } else if(file.name.endsWith('.md') || file.name.endsWith('.txt')){
+            const reader = new FileReader();
+            reader.onload = (ev)=>{
+                try{ parseImportedSong(ev.target.result); }catch(err){ alert('Error leyendo archivo: '+err.message); }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    });
+
+    // Drop específico en slidesContainer para fondo individual
+    if(slidesContainer){
+        slidesContainer.addEventListener('dragover', (e)=>{ e.preventDefault(); });
+        slidesContainer.addEventListener('drop', (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            const files = e.dataTransfer.files;
+            if(!files || files.length===0) return;
+            const file = files[0];
+            if(file.type.startsWith('image/')){
+                // Si hay selección múltiple, aplicar a seleccionadas, si no a global
+                if(typeof selectedSlides !== 'undefined' && selectedSlides.size > 0){
+                    handleDroppedImageForSelected(file);
+                } else {
+                    handleDroppedImage(file, e);
+                }
+            }
+        });
+    }
+
+    console.log('[DragDrop] iniciado');
+}
+
+function handleDroppedImage(file, event){
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+        const dataUrl = e.target.result;
+        // Si drop cerca de un slide, intentar fondo individual, si no global
+        const target = event ? event.target.closest('.slide-preview') : null;
+        if(target && target.dataset.index !== undefined){
+            const idx = parseInt(target.dataset.index);
+            if(!isNaN(idx) && typeof slidesData !== 'undefined' && slidesData[idx]){
+                const bgId = `dropped_${Date.now()}_${idx}`;
+                if(typeof bgRegistry !== 'undefined') bgRegistry[bgId] = dataUrl;
+                slidesData[idx].bgImageId = bgId;
+                if(typeof syncSlidesToLyrics === 'function') syncSlidesToLyrics();
+                if(typeof renderSlides === 'function') renderSlides();
+                alert('✅ Fondo aplicado a diapositiva #'+(idx+1));
+                return;
+            }
+        }
+        // Global
+        if(typeof bgImageData !== 'undefined'){
+            bgImageData = dataUrl;
+            if(typeof updateStyles === 'function') updateStyles();
+            // Guardar como global con etiqueta
+            if(typeof nextBgId !== 'undefined' && typeof bgRegistry !== 'undefined'){
+                const bgId = `global_${nextBgId++}`;
+                bgRegistry[bgId] = dataUrl;
+                if(typeof globalBgImageId !== 'undefined') globalBgImageId = bgId;
+                if(typeof syncGlobalBackground === 'function') syncGlobalBackground(bgId);
+                if(typeof renderSlides === 'function') renderSlides();
+            }
+            alert('✅ Fondo global aplicado. Se guardará con [FONDOGENERAL]');
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleDroppedImageForSelected(file){
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+        const dataUrl = e.target.result;
+        const bgId = `dropped_multi_${Date.now()}`;
+        if(typeof bgRegistry !== 'undefined') bgRegistry[bgId] = dataUrl;
+        if(typeof selectedSlides !== 'undefined'){
+            for(let idx of selectedSlides){
+                if(idx >=0 && idx < slidesData.length){
+                    slidesData[idx].bgImageId = bgId;
+                }
+            }
+        }
+        if(typeof syncSlidesToLyrics === 'function') syncSlidesToLyrics();
+        if(typeof renderSlides === 'function') renderSlides();
+        alert('✅ Fondo aplicado a '+selectedSlides.size+' diapositivas seleccionadas');
+    };
+    reader.readAsDataURL(file);
+}
+
+// ---------- 8: Recientes ----------
+let recentSongs = [];
+const RECENT_KEY = 'wt_recent_songs_v14';
+const RECENT_MAX = 10;
+
+function loadRecentSongs(){
+    try{
+        const raw = localStorage.getItem(RECENT_KEY);
+        if(raw) recentSongs = JSON.parse(raw);
+        if(!Array.isArray(recentSongs)) recentSongs = [];
+    }catch(e){ recentSongs = []; }
+}
+
+function saveRecentSongs(){
+    try{ localStorage.setItem(RECENT_KEY, JSON.stringify(recentSongs)); }catch(e){}
+}
+
+function addToRecentSongs(name, author, lyrics){
+    if(!lyrics || lyrics.trim().length < 10) return;
+    const cleanName = name.trim() || 'Sin título';
+    const cleanAuthor = author.trim() || '';
+    const entry = {
+        id: Date.now(),
+        name: cleanName,
+        author: cleanAuthor,
+        lyrics: lyrics,
+        timestamp: Date.now(),
+        preview: lyrics.split('\n').slice(0,3).join(' ').substring(0,80)
+    };
+    // Evitar duplicados exactos por nombre+letra
+    recentSongs = recentSongs.filter(r=> !(r.name===cleanName && r.lyrics===lyrics));
+    recentSongs.unshift(entry);
+    if(recentSongs.length > RECENT_MAX) recentSongs = recentSongs.slice(0, RECENT_MAX);
+    saveRecentSongs();
+    renderRecentSongs();
+}
+
+function renderRecentSongs(){
+    const list = document.getElementById('recentSongsList');
+    if(!list) return;
+    if(recentSongs.length===0){
+        list.innerHTML = '<p class="text-[10px] text-slate-500 italic text-center py-1"><i class="fa-solid fa-inbox"></i> Vacío</p>';
+        return;
+    }
+    list.innerHTML = '';
+    recentSongs.forEach((item, idx)=>{
+        const div = document.createElement('div');
+        div.className = 'group flex items-center justify-between bg-white dark:bg-slate-700/50 border border-slate-200/50 dark:border-slate-600/30 rounded-md px-1.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-600/50 transition cursor-pointer';
+        div.onclick = ()=> loadRecentSong(idx);
+        const timeAgo = getTimeAgo(item.timestamp);
+        div.innerHTML = `
+            <div class="flex-1 min-w-0 flex items-center gap-1.5">
+                <i class="fa-solid fa-music text-[9px] text-blue-400 shrink-0"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-bold text-slate-800 dark:text-white truncate leading-tight">${escapeHtml(item.name)}</p>
+                    <p class="text-[9px] text-slate-500 dark:text-slate-400 truncate leading-tight">${timeAgo} • ${escapeHtml(item.preview.substring(0,30))}</p>
+                </div>
+            </div>
+            <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition shrink-0 ml-1">
+                <button onclick="event.stopPropagation(); loadRecentSong(${idx})" class="w-5 h-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center text-[8px]" title="Cargar"><i class="fa-solid fa-play"></i></button>
+                <button onclick="event.stopPropagation(); removeRecentSong(${idx})" class="w-5 h-5 rounded-full bg-slate-600 hover:bg-red-600 text-white flex items-center justify-center text-[8px]" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function getTimeAgo(ts){
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff/60000);
+    if(mins < 1) return 'ahora';
+    if(mins < 60) return mins+'m';
+    const hours = Math.floor(mins/60);
+    if(hours < 24) return hours+'h';
+    const days = Math.floor(hours/24);
+    return days+'d';
+}
+
+function loadRecentSong(idx){
+    const item = recentSongs[idx];
+    if(!item) return;
+    if(slidesData.length > 0){
+        if(!confirm(`¿Cargar "${item.name}"? Reemplazará la letra actual en el editor.`)) return;
+    }
+    document.getElementById('songName').value = item.name;
+    document.getElementById('songAuthor').value = item.author;
+    document.getElementById('lyricsInput').value = item.lyrics;
+    try{ updateFilenamePreview(); }catch(e){}
+    try{ processLyrics(); }catch(e){}
+    try{ scrollToSection('diapositivas'); }catch(e){}
+}
+
+function removeRecentSong(idx){
+    recentSongs.splice(idx,1);
+    saveRecentSongs();
+    renderRecentSongs();
+}
+
+function clearRecentSongs(){
+    if(confirm('¿Borrar todas las canciones recientes?')){
+        recentSongs = [];
+        saveRecentSongs();
+        renderRecentSongs();
+    }
+}
+
+// ---------- 11: Modo Ensayo ----------
+let essayModeActive = false;
+let essayTimer = null;
+let essayCurrentIndex = 0;
+
+
+function updateEssaySpeed(val){
+    const intervalInput = document.getElementById('essayInterval');
+    const rangeInput = document.getElementById('essayIntervalRange');
+    const label = document.getElementById('essaySpeedLabel');
+    let v = parseInt(val);
+    if(isNaN(v) || v < 1) v = 1;
+    if(v > 30) v = 30;
+    if(intervalInput && intervalInput.value != v) intervalInput.value = v;
+    if(rangeInput && rangeInput.value != v) {
+        // range max 15, but allow 30 via number
+        if(v <= 15) rangeInput.value = v;
+    }
+    if(label) label.textContent = v + 's';
+
+    // Si ensayo activo, reiniciar timer con nueva velocidad
+    if(typeof essayModeActive !== 'undefined' && essayModeActive){
+        if(typeof essayTimer !== 'undefined' && essayTimer){
+            clearInterval(essayTimer);
+        }
+        // Recalcular y reiniciar
+        essayTimer = setInterval(()=>{
+            essayCurrentIndex++;
+            if(essayCurrentIndex >= slidesData.length){
+                essayCurrentIndex = 0;
+            }
+            highlightEssaySlide(essayCurrentIndex);
+        }, v*1000);
+        console.log('[Ensayo] velocidad actualizada a', v, 's');
+    }
+}
+
+
+function toggleEssayMode(){
+    if(essayModeActive) stopEssayMode();
+    else startEssayMode();
+}
+
+function startEssayMode(){
+    if(typeof slidesData === 'undefined' || slidesData.length===0){
+        alert('No hay diapositivas para ensayar. Procesa una letra primero.');
+        return;
+    }
+    const intervalInput = document.getElementById('essayInterval');
+    let intervalSec = parseInt(intervalInput?.value) || 5;
+    if(intervalSec < 1) intervalSec = 1;
+    if(intervalSec > 30) intervalSec = 30;
+
+    essayModeActive = true;
+    essayCurrentIndex = 0;
+
+    const btn = document.getElementById('essayModeBtn');
+    const icon = document.getElementById('essayIcon');
+    const indicator = document.getElementById('essayModeIndicator');
+    const label = document.getElementById('essaySpeedLabel');
+    if(btn){
+        btn.classList.remove('bg-amber-600','hover:bg-amber-700');
+        btn.classList.add('bg-red-600','hover:bg-red-700','animate-pulse');
+        if(icon){
+            icon.className = 'fa-solid fa-stop';
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+        }
+    }
+    if(indicator){
+        indicator.classList.remove('hidden');
+        indicator.classList.add('flex');
+    }
+    if(label) label.textContent = intervalSec + 's';
+
+    // Resaltar primera diapositiva
+    highlightEssaySlide(essayCurrentIndex);
+
+    essayTimer = setInterval(()=>{
+        essayCurrentIndex++;
+        if(essayCurrentIndex >= slidesData.length){
+            essayCurrentIndex = 0; // loop
+            // Opcional: detener al final
+            // stopEssayMode();
+            // alert('✅ Ensayo completado');
+            // return;
+        }
+        highlightEssaySlide(essayCurrentIndex);
+    }, intervalSec*1000);
+
+    console.log('[Ensayo] iniciado cada', intervalSec, 's');
+}
+
+function stopEssayMode(){
+    essayModeActive = false;
+    if(essayTimer){ clearInterval(essayTimer); essayTimer=null; }
+    const btn = document.getElementById('essayModeBtn');
+    const icon = document.getElementById('essayIcon');
+    const indicator = document.getElementById('essayModeIndicator');
+    if(btn){
+        btn.classList.remove('bg-red-600','hover:bg-red-700','animate-pulse');
+        btn.classList.add('bg-amber-600','hover:bg-amber-700');
+        if(icon){
+            icon.className = 'fa-solid fa-play';
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        }
+    }
+    if(indicator){
+        indicator.classList.add('hidden');
+        indicator.classList.remove('flex');
+    }
+    // Quitar resaltados
+    document.querySelectorAll('.slide-preview').forEach(el=>{
+        el.classList.remove('ring-4','ring-amber-400','essay-active');
+    });
+    console.log('[Ensayo] detenido');
+}
+
+function highlightEssaySlide(index){
+    const slides = document.querySelectorAll('.slide-preview');
+    slides.forEach(el=> el.classList.remove('ring-4','ring-amber-400','essay-active'));
+    const target = document.querySelector(`.slide-preview[data-index="${index}"]`);
+    if(target){
+        target.classList.add('ring-4','ring-amber-400','essay-active');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // Si proyección abierta, cambiar también proyección
+    if(typeof currentProjectionIndex !== 'undefined' && currentProjectionIndex !== -1){
+        if(typeof renderProjectionSlide === 'function'){
+            currentProjectionIndex = index;
+            renderProjectionSlide();
+        }
+    }
+}
+
+// Detener ensayo al cerrar proyección o al procesar nueva letra
+let _origCloseProjection = null;
+if(typeof closeProjection === 'function'){
+    _origCloseProjection = closeProjection;
+    closeProjection = function(){
+        if(essayModeActive) stopEssayMode();
+        _origCloseProjection();
+    };
+}
+
+// Exportar funciones nuevas al scope global
+window.saveSessionToLocalStorage = saveSessionToLocalStorage;
+window.loadSessionFromLocalStorage = loadSessionFromLocalStorage;
+window.clearSavedSession = clearSavedSession;
+window.searchRepertoire = searchRepertoire;
+window.initDragDrop = initDragDrop;
+window.loadRecentSongs = loadRecentSongs;
+window.addToRecentSongs = addToRecentSongs;
+window.renderRecentSongs = renderRecentSongs;
+window.loadRecentSong = loadRecentSong;
+window.removeRecentSong = removeRecentSong;
+window.clearRecentSongs = clearRecentSongs;
+window.updateEssaySpeed = updateEssaySpeed;
+window.renameRepertoireItem = renameRepertoireItem;
+window.toggleEssayMode = toggleEssayMode;
+window.startEssayMode = startEssayMode;
+window.stopEssayMode = stopEssayMode;

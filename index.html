@@ -22,11 +22,11 @@
     </script>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- LIBRERÍAS DE EXPORTACIÓN (CORE) -->
     <!-- 1. PptxGenJS: El motor profesional para PowerPoint -->
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-    
+
     <!-- 2. Utilidades PDF e Imagen -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -39,6 +39,9 @@
 </head>
 <body class="min-h-screen pb-20 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-200 transition-colors duration-300">
 
+    <!-- BANNER file:// detectado (local sin servidor) -->
+    
+
     <!-- Navbar -->
     <nav class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 transition-colors duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,7 +50,7 @@
                     <i class="fa-solid fa-music text-blue-500 text-2xl"></i>
                     <span class="font-bold text-xl tracking-tight">Worship<span class="text-blue-500">Tools</span></span>
                 </div>
-                
+
                 <!-- Right Side Actions -->
                 <div class="flex items-center gap-2">
                     <!-- Theme Button -->
@@ -112,7 +115,7 @@
                     <div>
                         <label class="text-xs text-slate-400 uppercase font-bold">Resultado (Etiqueta)</label>
                         <div class="flex gap-2">
-                            <input type="text" id="resultOutput" readonly 
+                            <input type="text" id="resultOutput" readonly
                                 class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded p-3 sm:p-2.5 text-green-600 dark:text-green-400 font-mono focus:outline-none transition-colors text-base">
                             <button onclick="copyToClipboard('resultOutput')" class="bg-slate-700 hover:bg-slate-600 text-white px-4 rounded transition min-h-[44px] min-w-[44px] flex items-center justify-center" title="Copiar">
                                 <i class="fa-regular fa-copy"></i>
@@ -131,13 +134,13 @@
                         <button onclick="searchExternal('youtube')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-brands fa-youtube"></i> Video</button>
                         <button onclick="searchExternal('lyrics')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-align-left"></i> Letra</button>
                         <button onclick="searchExternal('chords')" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-guitar"></i> Acordes</button>
-                        
+
                         <!-- Instrumentos Base -->
                         <button onclick="searchExternal('drums')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-drum"></i> Batería</button>
                         <button onclick="searchExternal('piano')" class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-keyboard"></i> Piano</button>
                         <button onclick="searchExternal('guitar_cover')" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-guitar"></i> Guitarra</button>
                         <button onclick="searchExternal('bass')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-music"></i> Bajo</button>
-                        
+
                         <!-- Nuevos Solicitados -->
                         <button onclick="searchExternal('voices')" class="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-microphone-lines"></i> Voces</button>
                         <button onclick="searchExternal('trumpet')" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2.5 rounded flex gap-1 items-center min-h-[44px]"><i class="fa-solid fa-bullhorn"></i> Trompeta</button>
@@ -151,20 +154,28 @@
         <!-- SECCIÓN 2: EDITOR -->
         <section id="diapositivas" class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl border border-slate-200 dark:border-slate-700 transition-colors duration-300">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
-                <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-blue-400">
-                    <i class="fa-solid fa-layer-group"></i> Editor de Diapositivas
-                </h2>
-                <button onclick="toggleEditor()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
-                    <i id="editorIcon" class="fa-solid fa-chevron-up"></i>
-                    <span id="editorText">Ocultar</span>
-                </button>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg sm:text-xl font-bold flex items-center gap-2 text-blue-400">
+                        <i class="fa-solid fa-layer-group"></i> Editor de Diapositivas
+                    </h2>
+                    <span id="autoSaveStatus" class="hidden items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full border border-green-500/20 bg-green-950/30 text-green-400">
+                        <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i> <span id="autoSaveText" class="hidden md:inline text-[9px]">5m</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="saveSessionToLocalStorage(true)" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700 hover:bg-slate-600 text-white text-xs border border-slate-600 transition" title="Guardar ahora (auto cada 5m)"><i class="fa-solid fa-floppy-disk text-[12px]"></i></button>
+                    <button onclick="toggleEditor()" class="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white text-xs sm:text-sm px-3 py-2 rounded flex items-center gap-2 transition min-h-[40px]">
+                        <i id="editorIcon" class="fa-solid fa-chevron-up"></i>
+                        <span id="editorText">Ocultar</span>
+                    </button>
+                </div>
             </div>
 
             <div id="editorContainer" class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-                
+
                 <!-- Panel Lateral (Configuración) -->
                 <div class="lg:col-span-4 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 h-fit transition-colors">
-                    
+
                     <!-- Letra -->
                     <div>
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
@@ -179,6 +190,7 @@
                                 <span class="text-xs cursor-pointer text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1" onclick="openLyricsFullscreen()">
                                     <i class="fa-solid fa-expand"></i> <span class="hidden sm:inline">Pantalla</span>
                                 </span>
+                                </span>
                                 <span class="text-xs cursor-pointer hover:text-red-400 Limpiar-todo flex items-center gap-1" onclick="clearSlides()">
                                     <i class="fa-solid fa-trash"></i> <span class="hidden sm:inline">Limpiar</span>
                                 </span>
@@ -192,11 +204,11 @@
                                 <span id="searchCount" class="absolute right-3 text-xs text-slate-500 hidden z-10" style="top: 15%">0/0</span>
                             </div>
                         </div>
-                        <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..." 
+                        <textarea id="lyricsInput" rows="6" placeholder="Pega la letra aquí..."
                             class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-3 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none resize-y transition-colors text-base"></textarea>
-                        
-                        
-<div class="hidden">
+
+                        <!-- Barra de dictado del editor (compacta) -->
+                        <div class="hidden">
     <input type="checkbox" id="addBlankSlide">
     <input type="checkbox" id="addTitleSlide">
 </div>
@@ -237,7 +249,7 @@
                             </div>
                             <!-- Control de Negrita Visible -->
                             <label class="flex items-center gap-2 text-xs sm:text-sm text-slate-800 dark:text-white cursor-pointer select-none bg-slate-200 dark:bg-slate-800 p-2.5 rounded border border-slate-300 dark:border-slate-600 transition-colors min-h-[44px]">
-                                <input type="checkbox" id="textBold" checked onchange="updateStyles()" class="accent-blue-500"> 
+                                <input type="checkbox" id="textBold" checked onchange="updateStyles()" class="accent-blue-500">
                                 <span class="font-bold">Negrita (Bold)</span>
                             </label>
                         </div>
@@ -300,7 +312,7 @@
                             <span class="text-xs text-slate-500 uppercase font-bold block mb-1">Líneas por diapositiva: <span id="linesVal" class="">1</span></span>
                             <!-- Línea original (aproximadamente línea 214) -->
 <input type="range" id="linesPerSlide" min="1" max="8" value="1" class="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="document.getElementById('linesVal').innerText = this.value; refreshSlidesFromCurrentState()">
-                           
+
                         </div>
                     </div>
 
@@ -311,7 +323,7 @@
                         <!-- Input de Nombre de Archivo -->
                         <div>
                             <label class="text-xs text-slate-400 uppercase font-bold">Nombre del Archivo (Exportación)</label>
-                            <input type="text" id="exportFileName" placeholder="Nombre del archivo..." 
+                            <input type="text" id="exportFileName" placeholder="Nombre del archivo..."
                                 class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white text-sm focus:border-blue-500 outline-none font-mono mt-1 transition-colors text-base">
                         </div>
 
@@ -320,12 +332,12 @@
                             <button onclick="addToRepertoire()" class="col-span-2 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded font-bold transition flex items-center justify-center gap-2 border border-amber-500 text-base min-h-[44px] w-full">
                                 <i class="fa-solid fa-plus-circle"></i> Agregar al Repertorio
                             </button>
-                            
+
                             <button onclick="downloadPPTX()" class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-powerpoint"></i> <span class="hidden sm:inline">Descargar PPTX</span>
                                 <span class="custom-tooltip">Descargar PowerPoint</span>
                             </button>
-                            
+
                             <button id="btnExportPDF" onclick="exportToPDF()" class="bg-green-600 hover:bg-green-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
                                 <i class="fa-solid fa-file-pdf"></i> <span class="hidden sm:inline">Descargar PDF</span>
                                 <span class="custom-tooltip">Descargar PDF</span>
@@ -340,27 +352,55 @@
                                 <i class="fa-solid fa-file-export"></i> <span class="hidden sm:inline">Exportar .md</span>
                                 <span class="custom-tooltip">Exportar Markdown</span>
                             </button>
+
+                            <button onclick="document.getElementById('pptxToEditorInput').click()" class="col-span-2 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded font-bold shadow-lg transition flex items-center justify-center gap-2 text-sm min-h-[44px] w-full custom-tooltip-container">
+                                <i class="fa-solid fa-file-powerpoint"></i> <span>Importar PPTX al Editor</span>
+                                <span class="custom-tooltip">Abre un .pptx: extrae el texto directo a "Letra Completa"</span>
+                            </button>
+                            <input type="file" id="pptxToEditorInput" accept=".pptx" class="hidden" onchange="importPptxToEditor(this)">
                         </div>
                         <div id="loadingIndicator" class="hidden flex items-center justify-center gap-2 mt-2 text-sm text-blue-400">
                             <div class="loader"></div> <span id="loadingText">Procesando...</span>
                         </div>
                     </div>
+
+                    <hr class="border-slate-700">
+
+                    <!-- Recientes (8) compact -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] text-slate-500 uppercase font-bold flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-amber-500 text-[11px]"></i> <span class="hidden sm:inline">Recientes</span><span class="sm:hidden"><i class="fa-solid fa-clock"></i></span> <span class="bg-slate-200 dark:bg-slate-700 text-[9px] px-1 rounded-full">10</span></span>
+                            <button onclick="clearRecentSongs()" class="w-5 h-5 flex items-center justify-center rounded-full hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition" title="Limpiar"><i class="fa-solid fa-trash text-[9px]"></i></button>
+                        </div>
+                        <div id="recentSongsList" class="space-y-1 max-h-32 overflow-y-auto custom-scroll bg-slate-50 dark:bg-slate-800/50 rounded-lg p-1.5 border border-slate-200 dark:border-slate-700">
+                            <p class="text-[11px] text-slate-500 italic">Sin recientes</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Vista Previa (Centro) -->
-                <div class="lg:col-span-8">
+                                <div class="lg:col-span-8">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                        <h3 class="text-base sm:text-lg font-semibold text-slate-700 dark:text-slate-300 transition-colors">Vista Previa (<span id="slideCount">0</span>)</h3>
-                        <div class="flex gap-2">
+                        <h3 class="text-sm sm:text-base font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"><i class="fa-solid fa-eye text-[12px]"></i> <span id="slideCount">0</span> <span id="essayModeIndicator" class="hidden items-center gap-1 text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full animate-pulse"><span class="w-1 h-1 bg-white rounded-full animate-ping"></span> <span id="essaySpeedLabel">5s</span></span></h3>
+                        <div class="flex flex-wrap gap-1 items-center">
+                            <!-- Ensayo compacto icon + speed -->
+                            <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full pl-1 pr-2 py-0.5 shadow-sm">
+                                <button id="essayModeBtn" onclick="toggleEssayMode()" class="w-7 h-7 rounded-full bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center text-[11px] transition shadow" title="Ensayo auto-scroll">
+                                    <i class="fa-solid fa-play" id="essayIcon"></i>
+                                </button>
+                                <input type="range" id="essayIntervalRange" min="1" max="15" value="5" step="1" class="w-10 sm:w-14 h-1 accent-amber-500 cursor-pointer hidden sm:block" oninput="updateEssaySpeed(this.value)" title="Velocidad">
+                                <input type="number" id="essayInterval" value="5" min="1" max="30" class="w-7 bg-transparent text-[11px] font-bold text-slate-700 dark:text-white text-center outline-none border-none p-0" oninput="updateEssaySpeed(this.value)" title="Segundos por slide - editable durante ensayo">
+                                <span class="text-[9px] text-slate-500 font-bold">s</span>
+                            </div>
                             <button id="btnSelectionMode" onclick="toggleSelectionMode()" class="bg-green-600 hover:bg-green-700 text-xs sm:text-sm px-3 py-2 rounded transition text-white border border-green-500 min-h-[40px] min-w-[40px] sm:min-w-auto flex items-center gap-1 font-bold">
                                 <i class="fa-solid fa-check-double"></i> <span class="hidden sm:inline">Seleccionar</span>
                             </button>
                             <button onclick="toggleQuickCopy()" class="bg-slate-700 text-xs sm:text-sm px-3 py-2 rounded hover:bg-blue-600 transition text-white border border-slate-600 min-h-[40px] min-w-[40px] sm:min-w-auto">
-                                <i class="fa-regular fa-clone"></i> <span class="hidden sm:inline">Copiar Textos</span>
+                                <i class="fa-regular fa-clone"></i> <span class="hidden sm:inline">Copiar</span>
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Barra de Selección Múltiple -->
                     <div id="multiSelectActionBar" class="hidden flex-col sm:flex-row items-start sm:items-center justify-between bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2 sm:p-3 mb-4 transition-all gap-2">
                         <span id="selectedCount" class="text-blue-700 dark:text-blue-400 font-bold text-xs sm:text-sm">0 seleccionada(s)</span>
@@ -379,7 +419,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div id="slidesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-max">
                         <div class="text-slate-500 text-center col-span-full py-12 border-2 border-dashed border-slate-700 rounded-lg bg-slate-800/50">
                             <i class="fa-solid fa-music text-4xl mb-3 opacity-50"></i><br>
@@ -425,9 +465,9 @@
                 <!-- Drop Zone & Config -->
                 <div class="lg:col-span-1 space-y-4">
                     <div class="bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors">
-                        
+
                         <!-- Drop Zone para PPTX (Convertir a MD) -->
-                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-center hover:border-green-500 transition cursor-pointer mb-4" 
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-center hover:border-green-500 transition cursor-pointer mb-4"
                              onclick="document.getElementById('pptxToMdInput').click()">
                             <i class="fa-solid fa-file-powerpoint text-3xl text-green-500 mb-2"></i>
                             <p class="text-xs font-bold text-slate-700 dark:text-slate-300">📄 Convierte PPTX a MD (Importable)</p>
@@ -435,22 +475,9 @@
                             <input type="file" id="pptxToMdInput" accept=".pptx" class="hidden" onchange="convertPptxToMd(this)">
                         </div>
 
-                        <!-- Divider -->
-                        <div class="relative my-3">
-                            <div class="absolute inset-0 flex items-center">
-                                <div class="w-full border-t border-slate-600"></div>
-                            </div>
-                            <div class="relative flex justify-center text-xs">
-                                <span class="px-2 bg-slate-50 dark:bg-slate-900 text-slate-500">O</span>
-                            </div>
-                        </div>
 
-                        <!-- Drop Zone original para subir PPTX externos (aviso) -->
-                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-center opacity-60">
-                            <i class="fa-solid fa-file-powerpoint text-3xl text-slate-400 mb-2"></i>
-                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Subir PPTX externos (no compatible)</p>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">No se pueden unir automáticamente</p>
-                        </div>
+
+
 
                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-4">
                             <i class="fa-solid fa-circle-info text-green-400 mr-1"></i>
@@ -460,7 +487,7 @@
                         <div class="space-y-3 mt-4">
                             <div>
                                 <label class="text-xs text-slate-400 uppercase font-bold">Nombre del Archivo Final</label>
-                                <input type="text" id="repertoireFileName" placeholder="Ej: Servicio_Domingo" 
+                                <input type="text" id="repertoireFileName" placeholder="Ej: Servicio_Domingo"
                                     class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded p-2.5 text-slate-900 dark:text-white focus:border-amber-500 outline-none mt-1 transition-colors text-base">
                             </div>
                             <button onclick="downloadSetlist()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg shadow-lg transition flex justify-center items-center gap-2 text-base min-h-[44px]">
@@ -478,17 +505,23 @@
 
                 <!-- Lista -->
                 <div class="lg:col-span-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4 h-64 lg:h-auto overflow-y-auto custom-scroll relative transition-colors">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3 flex justify-between">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-2 flex justify-between">
                         Lista de Canciones
                         <span id="repertoireCount" class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
                     </h3>
+                    <div class="relative mb-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]"></i>
+                            <input type="text" id="repertoireSearch" placeholder="Filtrar..." oninput="searchRepertoire()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full pl-7 pr-7 py-1.5 text-xs focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 outline-none transition">
+                            <button onclick="document.getElementById('repertoireSearch').value=''; searchRepertoire()" class="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 text-[10px]" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
                     <div id="repertoireList" class="space-y-2">
                         <p class="text-slate-500 text-xs text-center mt-10 italic">La lista está vacía.</p>
                     </div>
                 </div>
             </div>
         </section>
-
 
     </main>
 
@@ -536,7 +569,7 @@
             <h3 class="font-bold text-lg text-white"><i class="fa-regular fa-clipboard"></i> Copiado Rápido</h3>
             <button onclick="toggleQuickCopy()" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        
+
         <div class="p-4 border-b border-slate-700 bg-slate-800/50">
             <p class="text-xs text-slate-400 mb-2">Aquí están tus diapositivas ya separadas. Copia bloque por bloque para pegar en PowerPoint manualmente si prefieres.</p>
         </div>
@@ -566,7 +599,7 @@
         <div class="loader w-12 h-12 border-4"></div>
         <p class="text-white font-bold">Descargando recurso...</p>
     </div>
-    
+
     <!-- Botón de scroll -->
     <button id="scrollBtn" onclick="toggleScroll()" class="fixed bottom-4 right-4 z-50 bg-blue-600 text-white rounded-full h-12 w-12 flex items-center justify-center shadow-lg hover:bg-blue-700 transition" style="display: none;" data-direction="down">
         <i class="fa-solid fa-arrow-down"></i>
@@ -605,57 +638,115 @@
         </div>
     </div>
 
-    <!-- Modal Pantalla Completa para Letra -->
-    <div id="lyricsFullscreenModal" class="fixed inset-0 bg-slate-900 hidden items-center justify-center z-[100] p-4 sm:p-6 lg:p-8">
-        <div class="w-full h-full flex flex-col bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
-            <!-- Header -->
-            <div class="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-music text-blue-500 text-xl"></i>
-                    <h3 class="text-lg sm:text-xl font-bold text-white">Letra en Pantalla Completa</h3>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="decreaseLyricsFontSize()" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Disminuir tamaño">
-                        <i class="fa-solid fa-minus"></i>
-                    </button>
-                    <span id="lyricsFontSizeDisplay" class="text-white text-sm font-mono w-12 text-center">18px</span>
-                    <button onclick="increaseLyricsFontSize()" class="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition" title="Aumentar tamaño">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <div class="w-px h-6 bg-slate-600 mx-2"></div>
-                    <button onclick="closeLyricsFullscreen()" class="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition" title="Cerrar">
-                        <i class="fa-solid fa-xmark text-xl"></i>
-                    </button>
-                </div>
-            </div>
-            <!-- Search Bar -->
-            <div class="p-3 border-b border-slate-700 bg-slate-850">
-                <div class="relative">
-                    <input type="text" id="lyricsFullscreenSearch" placeholder="Buscar en letra..." oninput="searchInFullscreenLyrics()"
-                        class="w-full bg-slate-700 border border-slate-600 rounded-lg p-2.5 pl-10 text-white text-sm focus:border-blue-500 outline-none transition-colors">
-                    <i class="fa-solid fa-search absolute left-3 text-slate-400" style="top: 15%"></i>
-                    <div class="flex gap-1 mt-2">
-                        <button onclick="findPreviousMatch()" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs transition">
-                            <i class="fa-solid fa-chevron-up"></i> Anterior
-                        </button>
-                        <button onclick="findNextMatch()" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs transition">
-                            <i class="fa-solid fa-chevron-down"></i> Siguiente
-                        </button>
-                        <span id="fullscreenSearchCount" class="text-xs text-slate-400 self-center ml-2">0/0</span>
+        <!-- Modal Pantalla Completa para Letra - REDISEÑO BONITO LECTURA -->
+    <div id="lyricsFullscreenModal" class="fixed inset-0 bg-[#050a18]/90 backdrop-blur-xl hidden z-[100] p-0 sm:p-4 lg:p-6 overflow-hidden">
+        <!-- Fondo decorativo -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute -top-40 -left-40 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px]"></div>
+            <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-slate-800/20 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div class="relative w-full h-[100dvh] sm:h-[90vh] sm:max-h-[85vh] sm:max-w-3xl lg:max-w-4xl mx-auto bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 sm:rounded-[28px] shadow-[0_25px_80px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border-0 sm:border border-slate-800 flex flex-col overflow-hidden">
+            <!-- Header bonito -->
+            <div class="shrink-0 relative z-10 bg-slate-900/70 backdrop-blur-2xl border-b border-slate-800/80">
+                <div class="flex items-center justify-between gap-2 px-3 sm:px-5 py-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                            <i class="fa-solid fa-music text-white text-[12px] sm:text-[13px]"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-[13px] sm:text-[15px] font-bold text-white leading-tight truncate">Letra Completa</h3>
+                            <p class="text-[10px] sm:text-[11px] text-slate-400 leading-none hidden sm:block">Modo lectura y edición</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1 bg-slate-800 border border-slate-700/50 rounded-full pl-1 pr-1 py-1 shadow-inner">
+                            <button id="fullscreenSearchToggleBtn" onclick="toggleFullscreenSearch()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition flex items-center justify-center" title="Buscar (Ctrl+F)"><i class="fa-solid fa-magnifying-glass text-[11px]"></i></button>
+                            <div class="w-px h-4 bg-slate-700"></div>
+                            <button onclick="decreaseLyricsFontSize()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center" title="Texto más pequeño"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <span id="lyricsFontSizeDisplay" class="text-white text-[10px] font-mono w-7 text-center select-none">18px</span>
+                            <button onclick="increaseLyricsFontSize()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center" title="Texto más grande"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                        </div>
+                        <button onclick="closeLyricsFullscreen()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-800 hover:bg-red-500 border border-slate-700 hover:border-red-500 text-slate-400 hover:text-white transition flex items-center justify-center shadow-sm ml-1" title="Cerrar (ESC)"><i class="fa-solid fa-xmark text-[12px]"></i></button>
                     </div>
                 </div>
             </div>
-            <!-- Content -->
-            <div id="lyricsFullscreenContent" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scroll">
-                <div id="lyricsFullscreenText" class="text-white whitespace-pre-wrap leading-relaxed" style="font-size: 18px;">
+
+            <!-- Search Container -->
+            <div id="fullscreenSearchContainer" class="hidden shrink-0 relative z-10 bg-slate-800/80 backdrop-blur-xl border-b border-slate-700/50 p-3 sm:p-4">
+                <div class="max-w-2xl mx-auto w-full space-y-3">
+                    <div class="relative flex items-center">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-slate-500 text-xs pointer-events-none z-10"></i>
+                        <input type="text" id="lyricsFullscreenSearch" placeholder="Buscar en letra..." oninput="searchInFullscreenLyrics()"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-full pl-10 pr-4 py-2.5 text-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all leading-normal placeholder:text-slate-500">
+                    </div>
+                    <div class="flex gap-1.5 flex-wrap items-center">
+                        <button onclick="findPreviousMatch()" class="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-medium transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-up text-[9px]"></i> Anterior</button>
+                        <button onclick="findNextMatch()" class="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-medium transition flex items-center gap-1.5"><i class="fa-solid fa-chevron-down text-[9px]"></i> Siguiente</button>
+                        <span id="fullscreenSearchCount" class="text-[11px] text-slate-400 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded-full">0/0</span>
+                        <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                        <button onclick="toggleReplacePanel()" class="px-3 py-1.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold transition flex items-center gap-1.5"><i class="fa-solid fa-arrow-right-arrow-left text-[9px]"></i> Reemplazar</button>
+                        <button id="undoLyricsBtn" onclick="undoLyricsChange()" class="px-3 py-1.5 rounded-full bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold transition opacity-40 cursor-not-allowed flex items-center gap-1.5" disabled><i class="fa-solid fa-rotate-left text-[9px]"></i> Deshacer</button>
+                        <button onclick="toggleFullscreenSearch()" class="ml-auto w-6 h-6 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white flex items-center justify-center" title="Cerrar"><i class="fa-solid fa-xmark text-[10px]"></i></button>
+                    </div>
+                    <!-- Panel Reemplazar -->
+                    <div id="replacePanel" class="hidden bg-amber-950/20 border border-amber-800/30 rounded-2xl p-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div class="relative"><input type="text" id="replaceFind" placeholder="Buscar..." class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-white text-sm focus:border-amber-500 outline-none"><i class="fa-solid fa-search absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i></div>
+                            <div class="relative"><input type="text" id="replaceWith" placeholder="Reemplazar por..." class="w-full bg-slate-900 border border-slate-700 rounded-full px-4 py-2 text-white text-sm focus:border-amber-500 outline-none"><i class="fa-solid fa-pen absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i></div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 mt-3">
+                            <label class="flex items-center gap-2 text-[11px] text-slate-300 cursor-pointer bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full"><input type="checkbox" id="replaceCaseSensitive" class="accent-amber-500 w-3 h-3"> Mayúsculas</label>
+                            <button onclick="replaceAllInFullscreen()" class="px-4 py-1.5 rounded-full bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-amber-600/20"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Reemplazar todo</button>
+                            <span id="replaceResult" class="text-[11px] text-slate-400"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!-- Footer -->
-            <div class="p-3 border-t border-slate-700 bg-slate-900 flex justify-between items-center text-xs text-slate-400">
-                <span>Presiona ESC para cerrar</span>
-                <span id="lyricsLineCount">0 líneas</span>
+
+            <!-- Content lectura bonita -->
+            <div id="lyricsFullscreenContent" class="flex-1 overflow-y-auto custom-scroll overscroll-contain relative bg-[#0b1220] sm:bg-transparent" style="-webkit-overflow-scrolling: touch;">
+                <div class="min-h-full w-full flex flex-col">
+                    <!-- Papel central -->
+                    <div class="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10">
+                        <div id="lyricsFullscreenText" class="w-full min-h-[55vh] sm:min-h-[50vh] text-slate-100 whitespace-pre-wrap break-words outline-none focus:outline-none selection:bg-blue-500/30 selection:text-white leading-[1.9] tracking-[0.015em] text-[17px] sm:text-[19px] lg:text-[20px] font-[450] antialiased bg-slate-900/40 sm:bg-slate-800/30 backdrop-blur-sm border border-slate-800/50 sm:border-slate-700/30 rounded-[20px] sm:rounded-[24px] p-5 sm:p-8 lg:p-10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_10px_40px_-15px_rgba(0,0,0,0.5)] transition-all focus:border-blue-500/30 focus:bg-slate-800/40 focus:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06),0_15px_50px_-15px_rgba(59,130,246,0.2)]" style="font-family: 'Inter', system-ui, -apple-system, sans-serif;" contenteditable="true" spellcheck="false" role="textbox" aria-label="Letra editable" data-placeholder="Escribe o pega la letra aquí... Usa Ctrl+F para buscar"></div>
+                        
+                        <!-- Tip inferior -->
+                        <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] text-slate-500">
+                            <span class="flex items-center gap-1.5 bg-slate-900/60 border border-slate-800 px-3 py-1.5 rounded-full"><i class="fa-solid fa-lightbulb text-amber-400 text-[10px]"></i> Tip: usa Enter para nuevas líneas, Ctrl+F para buscar</span>
+                            <span class="hidden sm:flex items-center gap-1.5"><i class="fa-solid fa-keyboard text-[10px]"></i> ESC para cerrar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer bonito -->
+            <div class="shrink-0 relative z-10 bg-slate-900/80 backdrop-blur-2xl border-t border-slate-800/80 px-3 sm:px-5 py-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span id="lyricsLineCount" class="text-[11px] text-slate-400 bg-slate-800 border border-slate-700/50 px-2.5 py-1 rounded-full font-mono">0 líneas</span>
+                    <span class="hidden sm:inline text-[11px] text-slate-600">•</span>
+                    <span class="hidden sm:inline text-[11px] text-slate-500">Auto-guardado cada 5m</span>
+                </div>
+                <div class="flex items-center gap-1.5 sm:gap-2">
+                    <button onclick="clearFullscreenLyrics()" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-800 hover:bg-red-500/90 border border-slate-700 hover:border-red-500 text-slate-400 hover:text-white transition flex items-center justify-center shadow-sm" title="Limpiar"><i class="fa-solid fa-trash text-[11px]"></i></button>
+                    <div class="w-px h-5 bg-slate-700 hidden sm:block"></div>
+                    <button onclick="sendFullscreenToEditor(false)" class="h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 shadow-sm" title="Solo pasar al editor"><i class="fa-solid fa-download text-[10px]"></i> <span class="hidden sm:inline">Al Editor</span><span class="sm:hidden">Editor</span></button>
+                    <button onclick="sendFullscreenToEditor(true)" class="h-8 sm:h-9 px-4 sm:px-5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-[11px] sm:text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30" title="Pasar y procesar diapositivas"><i class="fa-solid fa-rocket text-[10px]"></i> Procesar</button>
+                </div>
             </div>
         </div>
     </div>
-</body>
+
+<div id="dropOverlay" class="fixed inset-0 bg-blue-600/85 backdrop-blur-md hidden items-center justify-center z-[200] pointer-events-none p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border-2 border-dashed border-blue-400 text-center">
+            <i class="fa-solid fa-images text-5xl text-blue-500 mb-4"></i>
+            <p class="text-lg font-bold text-slate-800 dark:text-white">Suelta la imagen aquí</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Se usará como fondo de diapositivas</p>
+        </div>
+    </div>
+
+
+
+    </body>
 </html>
