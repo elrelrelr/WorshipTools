@@ -10,7 +10,10 @@ const galleryImages = [
     'imagenes/fondo15.jpg', 'imagenes/fondo16.jpg', 'imagenes/fondo17.jpg', 'imagenes/fondo18.jpg',
     'imagenes/fondo19.jpg', 'imagenes/fondo20.jpg', 'imagenes/fondo21.jpg', 'imagenes/fondo22.jpg',
     'imagenes/fondo23.jpg', 'imagenes/fondo24.jpg', 'imagenes/fondo25.jpg', 'imagenes/fondo26.jpg',
-    'imagenes/fondo27.jpg',
+    'imagenes/fondo27.jpg', 'imagenes/fondo28.jpg', 'imagenes/fondo29.jpg', 'imagenes/fondo30.jpg',
+    'imagenes/fondo31.jpg', 'imagenes/fondo32.jpg', 'imagenes/fondo33.jpg', 'imagenes/fondo34.jpg',
+    'imagenes/fondo35.jpg', 'imagenes/fondo36.jpg', 'imagenes/fondo37.jpg', 'imagenes/fondo38.jpg',
+    'imagenes/fondo39.jpg', 'imagenes/fondo40.jpg', 'imagenes/fondo41.jpg', 'imagenes/fondo42.jpg',
     // GIFs (Se han verificado que solo existen del 1 al 7)
     'imagenes/gif1.gif', 'imagenes/gif2.gif', 'imagenes/gif3.gif', 'imagenes/gif4.gif',
     'imagenes/gif5.gif', 'imagenes/gif6.gif', 'imagenes/gif7.gif', 'imagenes/gif8.gif', 'imagenes/gif9.gif', 'imagenes/gif10.gif', 'imagenes/gif11.gif', 'imagenes/gif12.gif'
